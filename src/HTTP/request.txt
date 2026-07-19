@@ -1,0 +1,99 @@
+FUNCTION Request::parseRequestLine(line)
+    # This function only updates the object state.
+    # It does not return anything.
+
+    # Check if the request line is complete
+    IF CRLF is not found in line
+        setParseStatus(INCOMPLETE)
+        RETURN
+
+    # Remove CRLF from the line
+    start_line = text before CRLF
+
+    # Split the line into parts
+    tokens = split start_line by spaces
+
+    # The start line must have exactly 3 parts:
+    # method, target, version
+    IF number of tokens is not 3
+        setParseStatus(ERROR)
+        RETURN
+
+    method = tokens[0]
+    target = tokens[1]
+    version = tokens[2]
+
+    # Validate the method
+    IF method is not GET and is not POST and is not DELETE
+        setParseStatus(ERROR)
+        RETURN
+
+    # Validate the version
+    IF version is not HTTP/1.1
+        setParseStatus(ERROR)
+        RETURN
+
+    # Validate the target
+    IF target is empty
+        setParseStatus(ERROR)
+        RETURN
+
+    # Save parsed values in the object
+    set method value in the object
+    set target value in the object
+    set version value in the object
+
+    # Mark this line as successfully parsed
+    setParseStatus(COMPLETE)
+END FUNCTION
+
+FUNCTION Request::parseRequest(request)
+    # Keep parsing while there is still data to inspect
+    WHILE request has data
+
+        SWITCH current_state
+
+            CASE BEGIN:
+                # Move to the first parsing stage
+                setState(START_LINE)
+                CONTINUE
+
+            CASE START_LINE:
+                # Try to parse the request start line
+                parseRequestLine(request)
+
+                # Read the result set by parseRequestLine
+                IF getParseStatus() is INCOMPLETE
+                    # The request line is not complete yet
+                    RETURN INCOMPLETE
+
+                IF getParseStatus() is ERROR
+                    # The request line is invalid
+                    RETURN ERROR
+
+                # If we reach here, the request line is valid
+                setState(HEADER)
+                CONTINUE
+
+            CASE HEADER:
+                # Header parsing will come later
+                setState(EMPRY_LINE)
+                CONTINUE
+
+            CASE EMPRY_LINE:
+                # Empty line separates headers from body
+                setState(BODY)
+                CONTINUE
+
+            CASE BODY:
+                # Body parsing will come later
+                setParseStatus(COMPLETE)
+                RETURN COMPLETE
+
+        END SWITCH
+
+    END WHILE
+
+    # If we run out of data before finishing, the request is incomplete
+    RETURN INCOMPLETE
+END FUNCTION
