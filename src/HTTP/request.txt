@@ -1,0 +1,185 @@
+
+
+FUNCTION Request::parseRequestLine(line)
+    # This function only updates the object state.
+    # It does not return anything.
+
+    # Check if the request line is complete
+    IF CRLF is not found in line
+        setParseStatus(INCOMPLETE)
+        RETURN
+
+    # Remove CRLF from the line
+    start_line = text before CRLF
+
+    # Split the line into parts
+    tokens = split start_line by spaces
+
+    # The start line must have exactly 3 parts:
+    # method, target, version
+    IF number of tokens is not 3
+        setParseStatus(ERROR)
+        RETURN
+
+    method = tokens[0]
+    target = tokens[1]
+    version = tokens[2]
+
+    # Validate the method
+    IF method is not GET and is not POST and is not DELETE
+        setParseStatus(ERROR)
+        RETURN
+
+    # Validate the version
+    IF version is not HTTP/1.1
+        setParseStatus(ERROR)
+        RETURN
+
+    # Validate the target
+    IF target is empty
+        setParseStatus(ERROR)
+        RETURN
+
+    # Save parsed values in the object
+    set method value in the object
+    set target value in the object
+    set version value in the object
+
+    # Mark this line as successfully parsed
+    setParseStatus(COMPLETE)
+END FUNCTION
+
+FUNCTION Request::parseHeaders(buffer)
+    # This function only updates the object state.
+    # It does not return anything.
+    #
+    # It is incremental / resumable: it consumes one full
+    # header line at a time from the front of the buffer and
+    # is safe to call again when more data arrives.
+
+    # Keep consuming complete header lines
+    WHILE true
+
+        # A header line ends at the next CRLF
+        crlf_pos = position of CRLF in buffer
+
+        # No CRLF yet -> the current line is not fully received.
+        # Wait for more bytes to arrive on the next recv().
+        IF CRLF is not found in buffer
+            setParseStatus(INCOMPLETE)
+            RETURN
+
+        # An empty line (CRLF right at the front) is the blank
+        # line that separates headers from the body.
+        IF crlf_pos == 0
+            # Consume the blank line (the CRLF) from the buffer
+            erase the leading CRLF from buffer
+
+            # HTTP/1.1 requires a Host header
+            IF "host" is not in the stored headers
+                setParseStatus(ERROR)
+                RETURN
+
+            # Headers are done, move on to the body
+            setState(EMPRY_LINE)
+            setParseStatus(COMPLETE)
+            RETURN
+
+        # Extract the current header line (without the CRLF)
+        line = text before CRLF in buffer
+
+        # A header must be "name:value". Split on the FIRST ':'
+        colon_pos = position of first ':' in line
+
+        # No colon -> malformed header line
+        IF ':' is not found in line
+            setParseStatus(ERROR)
+            RETURN
+
+        name  = text before the first ':'
+        value = text after the first ':'
+
+        # The header name must not be empty and must not
+        # contain spaces (e.g. "Bad Name:" is invalid)
+        IF name is empty OR name contains whitespace
+            setParseStatus(ERROR)
+            RETURN
+
+        # Header names are case-insensitive -> normalize to lowercase
+        name = lowercase(name)
+
+        # Trim leading/trailing whitespace (spaces / tabs) from value
+        value = trim(value)
+
+        # Store the header (key already lowercased)
+        store name -> value in the headers map
+
+        # Consume this header line (line + its CRLF) from the front
+        erase line and its CRLF from buffer
+
+        # Loop again to try the next header line
+    END WHILE
+END FUNCTION
+
+FUNCTION Request::parseRequest(request)
+    # Keep parsing while there is still data to inspect
+    WHILE request has data
+
+        SWITCH current_state
+
+            CASE BEGIN:
+                # Move to the first parsing stage
+                setState(START_LINE)
+                CONTINUE
+
+            CASE START_LINE:
+                # Try to parse the request start line
+                parseRequestLine(request)
+
+                # Read the result set by parseRequestLine
+                IF getParseStatus() is INCOMPLETE
+                    # The request line is not complete yet
+                    RETURN INCOMPLETE
+
+                IF getParseStatus() is ERROR
+                    # The request line is invalid
+                    RETURN ERROR
+
+                # If we reach here, the request line is valid
+                setState(HEADER)
+                CONTINUE
+
+            CASE HEADER:
+                # Try to parse the header block
+                parseHeaders(request)
+
+                # Read the result set by parseHeaders
+                IF getParseStatus() is INCOMPLETE
+                    # Not all headers have arrived yet
+                    RETURN INCOMPLETE
+
+                IF getParseStatus() is ERROR
+                    # A header line is invalid (or Host missing)
+                    RETURN ERROR
+
+                # parseHeaders already advanced the state to
+                # EMPRY_LINE once the blank line was consumed
+                CONTINUE
+
+            CASE EMPRY_LINE:
+                # Empty line separates headers from body
+                setState(BODY)
+                CONTINUE
+
+            CASE BODY:
+                # Body parsing will come later
+                setParseStatus(COMPLETE)
+                RETURN COMPLETE
+
+        END SWITCH
+
+    END WHILE
+
+    # If we run out of data before finishing, the request is incomplete
+    RETURN INCOMPLETE
+END FUNCTION
