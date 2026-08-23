@@ -2,6 +2,7 @@
 # define JJ_CLIENTINFO_HPP
 
 #include "local_core.hpp"
+#include "../../inc/HTTP/Request.hpp"
 
 class ServerInfo;
 
@@ -12,7 +13,7 @@ private:
 public:
 	ServerInfo	&ServerRef;
 
-	std::string	RequestMsg;
+	Request		request;
 	int			ReceivedFlag;
 	
 	std::string	ResponseMsg;

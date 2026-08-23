@@ -7,6 +7,7 @@ int ClientInfo::func()
 
 ClientInfo::ClientInfo(ServerInfo &ServerRef):
 Info(CLIENT),
+request(),
 ServerRef(ServerRef),
 ReceivedFlag(0),
 SentFlag(0)

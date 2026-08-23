@@ -1,5 +1,5 @@
-#include "../local_core.hpp"
-#include "../test/TestingEnvironment.hpp"
+#include "inc/Webserv.hpp"
+#include "src/WebCore/test/TestingEnvironment.hpp"
 
 static void WebCore(void);
 

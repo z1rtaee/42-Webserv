@@ -1,4 +1,5 @@
 #include "local_core.hpp"
+#include "../../inc/HTTP/Request.hpp"
 
 std::vector<struct pollfd>	Sockets::AllSockets;
 std::vector<Info *>	Sockets::SocketInfo;
@@ -32,10 +33,7 @@ void	Sockets::ClientRequest(int ind)
 
 	bread = read (AllSockets[ind].fd, Rec, BUFFER_SIZE);
 	Rec[bread] = '\0';
-	if (Client->RequestMsg.empty())
-		Client->RequestMsg = Rec;
-	else
-		Client->RequestMsg = Client->RequestMsg + Rec;
+	Client->request.parseRequest(Rec);	
 }
 
 const char *STDHTTPResponse()

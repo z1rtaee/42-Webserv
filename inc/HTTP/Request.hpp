@@ -35,6 +35,7 @@ class Request {
         void                setBuffer(const std::string new_buffer);
         void                parseRequestLine();
         void                parseHeaders();
+        ParseStatus parseRequest(const std::string line);
 
     private:
         std::string _buffer;
@@ -45,7 +46,6 @@ class Request {
         ParseStatus _parseStatus;
         RequestState _state;
 
-        ParseStatus parseRequest(const std::string &line);
         //void        parseHeaders();
         void        parseKeyValues(std::string *line, std::string sep, std::string::size_type delim);
         static bool splitRequestLine(const std::string &line, std::string &method, std::string &target, std::string &version);

@@ -14,25 +14,25 @@ INCLUDE			= -I inc/
 ### COMPLETE TWINS LIBS ###
 LIB_HTTP_PATH	= inc/libs/
 LIB_HTTP		= $(LIB_HTTP_PATH)libHTTP.a
-CORE_PATH		= inc/libs/
-LIB_CORE		= $(CORE_PATH)libCore.a
+LIB_CORE_PATH		= inc/libs/
+LIB_CORE		= $(LIB_CORE_PATH)libCore.a
 LIBS 			= $(LIB_HTTP) $(LIB_CORE)
 
 ### WEBSERV SRCS ###
-SRCS	 		= $(CONFIG_SRCS) $(HTTP_SRCS)
 SRC_PATH		= src/
+SRCS	 		= $(CONFIG_SRCS) $(HTTP_SRCS)
 
-CONFIG_SRCS		= 
 CONFIG_PATH 	= src/config/
+CONFIG_SRCS		= 
 #???????????
 CONFIG			= $(addprefix $(CONFIG_PATH), $(CONFIG_SRCS))
 
-HTTP_SRCS		= clean.cpp
 HTTP_PATH		= src/HTTP/
+HTTP_SRCS		= clean.cpp
 HTTP			= $(addprefix $(HTTP_PATH), $(HTTP_SRCS))
 
+CORE_PATH		= src/WebCore/
 CORE_SRCS		= $(wildcard $(CORE_PATH)*.cpp) $(wildcard $(CORE_PATH)test/*.cpp)
-
 #????
 CORE			= 
 
@@ -67,6 +67,7 @@ $(NAME): 		$(LIBS)
 echo:
 				echo $(LIB_HTTP)"\n"
 				echo $(LIB_CORE)
+				echo $(CORE_SRCS)
 
 #### CRIAR ARQUIVO DIRETORIA PARA OS .A ###
 $(LIBS): 		$(LIB_HTTP) $(LIB_CORE)

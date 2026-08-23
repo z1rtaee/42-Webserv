@@ -185,7 +185,7 @@ void Request::parseRequestLine() {
     std::cout << "Successful" << std::endl;
 }
 
-ParseStatus Request::parseRequest(const std::string &request) {
+ParseStatus Request::parseRequest(const std::string request) {
     _buffer += request;
 
     while (!_buffer.empty()) {
