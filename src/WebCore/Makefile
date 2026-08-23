@@ -12,10 +12,10 @@ CXX = c++
 CXXFLAGS = -g
 # -Wall -Wextra -Werror -std=c++98
 
-all: $(NAME)
+all: $(LIB)
 
-$(NAME): $(LIB) main/main.cpp
-	$(CXX) $(CXXFLAGS) main/main.cpp $(LIB) -o $@
+#$(NAME): $(LIB) main/main.cpp
+#	$(CXX) $(CXXFLAGS) main/main.cpp $(LIB) -o $@
 
 $(LIB): $(OBJ_FILES)
 	ar csr $(LIB) $?

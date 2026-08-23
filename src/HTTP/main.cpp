@@ -1,6 +1,7 @@
+/*
 #include "../inc/HTTP/Request.hpp"
 
-/*MAIN FOR HEADERS*/
+MAIN FOR HEADERS
 int main(void) {
     Request request;
 
@@ -22,7 +23,7 @@ int main(void) {
 }
 
 
-/*MAIN FOR REQUEST LINE
+MAIN FOR REQUEST LINE
 int main(void) {
     Request request;
     
@@ -83,3 +84,4 @@ int main(void) {
 
 
 */
+
