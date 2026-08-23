@@ -12,7 +12,7 @@ CXXFLAGS		= -Wall -Wextra -Werror -std=c++98 -g
 INCLUDE			= -I inc/
 
 ### WEBSERV SRCS ###
-SRCS	 		= $(CONFIG_SRCS) $(HTTP_SRCS) main.cpp HTTP/Request.cpp HTTP/Response.cpp
+SRCS	 		= $(CONFIG_SRCS) $(HTTP_SRCS) main.cpp HTTP/clean.cpp
 SRC_PATH		= src/
 
 CONFIG_SRCS		= 
