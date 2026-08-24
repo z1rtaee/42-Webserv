@@ -5,22 +5,22 @@ WHITE   = \e[1;37m
 DEFAULT = \e[0m
 
 ### VARS ###
-NAME			= webserv
+NAME			= Webserv
 
-CXX				= c++
-CXXFLAGS		=  -std=c++98 -g
 INCLUDE			= -I inc/
+CXX				= c++
+CXXFLAGS		= -std=c++98 -g $(INCLUDE)
 
 ### COMPLETE TWINS LIBS ###
 LIB_HTTP_PATH	= inc/libs/
 LIB_HTTP		= $(LIB_HTTP_PATH)libHTTP.a
-LIB_CORE_PATH		= inc/libs/
+LIB_CORE_PATH	= inc/libs/
 LIB_CORE		= $(LIB_CORE_PATH)libCore.a
-LIBS 			= $(LIB_HTTP) $(LIB_CORE)
+LIB_WEBSERV		= WebServ.a
 
-### WEBSERV SRCS ###
+### Webserv SRCS ###
 SRC_PATH		= src/
-SRCS	 		= $(CONFIG_SRCS) $(HTTP_SRCS)
+SRCS	 		= $(CONFIG_SRCS) $(HTTP_SRCS) $(CORE_SRCS)
 
 CONFIG_PATH 	= src/config/
 CONFIG_SRCS		= 
@@ -31,10 +31,9 @@ HTTP_PATH		= src/HTTP/
 HTTP_SRCS		= clean.cpp
 HTTP			= $(addprefix $(HTTP_PATH), $(HTTP_SRCS))
 
-CORE_PATH		= src/WebCore/
-CORE_SRCS		= $(wildcard $(CORE_PATH)*.cpp) $(wildcard $(CORE_PATH)test/*.cpp)
-#????
-CORE			= 
+CORE_PATH		= src/Core/
+CORE_SRCS		= ClientInfo.cpp Excpetions.cpp Info.cpp ServerInfo.cpp Sockets.cpp aux.cpp TestingEnvironment.cpp
+CORE			= $(addprefix $(CORE_PATH), $(CORE_SRCS))
 
 TOTAL_SRCS		= $(words $(SRCS))
 FILES			= 0
@@ -42,9 +41,9 @@ FILES			= 0
 ### OBJECTS ###
 HTTP_OBJS_PATH		= obj/
 HTTP_OBJS 			= $(SRCS:%.cpp=$(HTTP_OBJS_PATH)%.o)
-CORE_OBJS			= $(CORE_SRCS:%.cpp=%.o)
+# CORE_OBJS 			= $(CORE:%.cpp=$(HTTP_OBJS_PATH)%.o)
 
-vpath %.cpp $(SRC_PATH) $(CONFIG_PATH) $(HTTP_PATH)
+vpath %.cpp $(SRC_PATH) $(CONFIG_PATH) $(HTTP_PATH) $(CORE_PATH)
 
 ### RULES ###
 all: 			$(NAME)
@@ -58,10 +57,10 @@ $(HTTP_OBJS_PATH)%.o: %.cpp | $(HTTP_OBJS_PATH)
 $(HTTP_OBJS_PATH):
 				@mkdir -p $@
 
-$(NAME): 		$(LIBS)
+$(NAME): 		$(LIB_WEBSERV)
 				@echo "$(WHITE)Bringing $(PINK)$(NAME)$(WHITE) to life!$(DEFAULT)"
 				@echo "$(WHITE)Creating $(PINK)$(NAME)'s$(WHITE) executable...$(DEFAULT)"
-				@$(CXX) $(CXXFLAGS) main.cpp $(LIBS) -o $@
+				$(CXX) $(CXXFLAGS) main.cpp $(LIB_WEBSERV) -o $@
 				@echo "$(PINK)$(NAME) was born!$(DEFAULT)"
 
 echo:
@@ -70,13 +69,15 @@ echo:
 				echo $(CORE_SRCS)
 
 #### CRIAR ARQUIVO DIRETORIA PARA OS .A ###
-$(LIBS): 		$(LIB_HTTP) $(LIB_CORE)
 
-$(LIB_HTTP): 	$(HTTP_OBJS)
-				ar -rcs $(LIB_HTTP) $?
+$(LIB_WEBSERV): $(HTTP_OBJS) $(CORE_OBJS)
+				ar -rcs $(LIB_WEBSERV) $?
 
-$(LIB_CORE): 	$(CORE_OBJS)
-				ar -rcs $(LIB_CORE) $?
+# $(LIB_HTTP): 	$(HTTP_OBJS)
+# 				ar -rcs $(LIB_HTTP) $?
+# 
+# $(LIB_CORE): 	$(CORE_OBJS)
+# 				ar -rcs $(LIB_CORE) $?
 
 ### CLEAN RULES ###
 clean:
@@ -92,7 +93,7 @@ clean:
 
 fclean: 		clean
 				@rm -f $(NAME)
-				@rm -f $(LIB_HTTP) $(LIB_CORE)
+				@rm -f $(LIB_WEBSERV)
 				@echo "$(WHITE)⋆˚࿔ Executable Killed˚⋆♡$(DEFAULT)"
 
 re: 			fclean all

@@ -1,7 +1,7 @@
 #ifndef JJ_EXCPETIONS_HPP
 # define JJ_EXCPETIONS_HPP
 
-#include "local_core.hpp"
+#include "Webserv.hpp"
 
 class WebExceptions : public std::exception
 {

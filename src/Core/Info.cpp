@@ -1,4 +1,4 @@
-#include "local_core.hpp"
+#include "Webserv.hpp"
 
 Info::Info(e_type type) :
 type(type)

@@ -1,4 +1,5 @@
-#include "local_core.hpp"
+#include "Webserv.hpp"
+#include "Core/LocalCore.hpp"
 
 int ServerInfo::func()
 {

@@ -1,8 +1,8 @@
-#include "inc/Webserv.hpp"
-#include "src/WebCore/test/TestingEnvironment.hpp"
+# include "Webserv.hpp"
+# include <signal.h>
 
+void TestingEnvironment(void);
 static void WebCore(void);
-
 extern int	G_STOP_VAR;
 
 void	bea_function(char *request, int reqsize, int fd, char *response, int respsize)

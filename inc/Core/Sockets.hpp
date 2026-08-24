@@ -1,7 +1,7 @@
 #ifndef JJ_SOCKETS_HPP
 # define JJ_SOCKETS_HPP
 
-#include "local_core.hpp"
+#include "Webserv.hpp"
 
 class Sockets
 {

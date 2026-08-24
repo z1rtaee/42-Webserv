@@ -1,4 +1,5 @@
-#include "local_core.hpp"
+#include "Webserv.hpp"
+#include "Core/LocalCore.hpp"
 
 int ClientInfo::func()
 {
@@ -7,9 +8,10 @@ int ClientInfo::func()
 
 ClientInfo::ClientInfo(ServerInfo &ServerRef):
 Info(CLIENT),
-request(),
 ServerRef(ServerRef),
+request(),
 ReceivedFlag(0),
+ResponseMsg(""),
 SentFlag(0)
 {
 	

@@ -1,7 +1,7 @@
 #ifndef JJ_STRUCTS_HPP
 # define JJ_STRUCTS_HPP
 
-#include "local_core.hpp"
+#include "Webserv.hpp"
 
 typedef struct s_server_info 
 {

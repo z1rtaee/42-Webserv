@@ -1,7 +1,7 @@
 #ifndef JJ_SERVERINFO_HPP
 # define JJ_SERVERINFO_HPP
 
-#include "local_core.hpp"
+#include "Webserv.hpp"
 
 class ClientInfo;
 

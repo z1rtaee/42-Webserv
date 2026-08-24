@@ -1,7 +1,6 @@
-// general\global functionalies used in WebCore but shared ammong full code
-
 #ifndef JJ_GLOBAL_CORE_HPP
 # define JJ_GLOBAL_CORE_HPP
+// general\global functionalies used in Core but shared ammong full code
 
 // General libs tbr start
 # include <iostream>

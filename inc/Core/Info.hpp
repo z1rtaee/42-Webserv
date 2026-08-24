@@ -1,7 +1,7 @@
 #ifndef JJ_INFO_HPP
 # define JJ_INFO_HPP
 
-#include "local_core.hpp"
+#include "Webserv.hpp"
 
 class Info
 {

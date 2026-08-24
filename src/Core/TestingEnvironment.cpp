@@ -1,4 +1,7 @@
-#include "TestingEnvironment.hpp"
+# include "Webserv.hpp"
+# include <signal.h>
+
+void TestingEnvironment(void);
 
 int	G_STOP_VAR = 1;
 
