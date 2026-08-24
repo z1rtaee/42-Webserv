@@ -33,7 +33,7 @@ void	Sockets::ClientRequest(int ind)
 
 	bread = read (AllSockets[ind].fd, Rec, BUFFER_SIZE);
 	Rec[bread] = '\0';
-	// Client->request.parseRequest(Rec);	
+	Client->request.parseRequest(Rec);	
 }
 
 const char *STDHTTPResponse()
