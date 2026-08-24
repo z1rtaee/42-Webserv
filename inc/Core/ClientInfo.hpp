@@ -12,11 +12,11 @@ private:
 public:
 	ServerInfo	&ServerRef;
 
-	Request		request;
-	int			ReceivedFlag;
+	Request				request;
+	enum ParseStatus	requestReceived;
 	
-	std::string	ResponseMsg;
-	int			SentFlag;
+	std::string			response;
+	enum ParseStatus	responseSent;
 	
 	ClientInfo(ServerInfo	&inf);
 };

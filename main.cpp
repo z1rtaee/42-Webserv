@@ -5,24 +5,10 @@ void TestingEnvironment(void);
 static void WebCore(void);
 extern int	G_STOP_VAR;
 
-void	bea_function(char *request, int reqsize, int fd, char *response, int respsize)
-{
-	write(fd, response, respsize);
-}
-
 int	main(void)
 {
-	TestingEnvironment();
-	char	Request[BUFFER_SIZE];
-	char	Response[BUFFER_SIZE];
-	int		res = open("index.html", O_RDWR);
-	int		respsize = read(res, Response, BUFFER_SIZE);
+	// TestingEnvironment();
 
-	if (res == -1)
-		return (std::cout << "Problem with open", 1);
-	if (respsize == -1)
-		return (close(res), std::cout << "Problem with read", 1);
-	close(res);
 	t_info info;
 
 	info.domain = DOMAIN;
@@ -100,5 +86,6 @@ static void WebCore(void)
 		// --- CheckFor timeout in possible client ---
 		// else if (Sockets::type[ind] == CLIENT)
 			// checkTimeout()
+		std::cout << "main loop" << std::endl;
 	}
 }

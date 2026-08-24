@@ -25,17 +25,6 @@ void	Sockets::delEverything()
 		delSocket(0);	
 }
 
-void	Sockets::ClientRequest(int ind)
-{
-	ClientInfo *Client = dynamic_cast<ClientInfo *>(SocketInfo[ind]);
-	char	Rec[BUFFER_SIZE + 1];
-	int		bread;
-
-	bread = read (AllSockets[ind].fd, Rec, BUFFER_SIZE);
-	Rec[bread] = '\0';
-	Client->request.parseRequest(Rec);	
-}
-
 const char *STDHTTPResponse()
 {
 	return (
@@ -56,15 +45,37 @@ Location: http://example.com/users/123\r\n\
 );
 }
 
+void	Sockets::ClientRequest(int ind)
+{
+	ClientInfo *Client = dynamic_cast<ClientInfo *>(SocketInfo[ind]);
+	char	Rec[BUFFER_SIZE + 1];
+	int		bread;
+
+	while (Client->requestReceived == INCOMPLETE)
+	{
+		bread = read (AllSockets[ind].fd, Rec, BUFFER_SIZE);
+		// if (bread == -1)
+			// handle error
+		Rec[bread] = '\0';
+		Client->requestReceived = Client->request.parseRequest(Rec);
+	}
+	AllSockets[ind].revents = 0;
+}
+
 void	Sockets::ServerResponse(int ind)
 {
 	ClientInfo *Client = dynamic_cast<ClientInfo *>(SocketInfo[ind]);
 	int		bwriten;
 
-	Client->ResponseMsg = STDHTTPResponse();
-	bwriten = write (AllSockets[ind].fd, Client->ResponseMsg.c_str(), BUFFER_SIZE);
-	Client->ResponseMsg.erase(0, bwriten);
-	Client->SentFlag = Client->ResponseMsg.empty();
+	Client->response = STDHTTPResponse();
+	while (Client->responseSent == INCOMPLETE)
+	{
+		bwriten = BUFFER_SIZE * (BUFFER_SIZE > Client->response.size()) + Client->response.size() * (Client->response.size() > BUFFER_SIZE);
+		bwriten = write (AllSockets[ind].fd, Client->response.c_str(), bwriten);
+		Client->response.erase(0, bwriten);
+		if (bwriten == 0 || Client->response.empty())
+			Client->responseSent = COMPLETE;
+	}
 	AllSockets[ind].revents = 0;
 }
 

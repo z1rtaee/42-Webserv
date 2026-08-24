@@ -10,9 +10,9 @@ ClientInfo::ClientInfo(ServerInfo &ServerRef):
 Info(CLIENT),
 ServerRef(ServerRef),
 request(),
-ReceivedFlag(0),
-ResponseMsg(""),
-SentFlag(0)
+requestReceived(INCOMPLETE),
+response(""),
+responseSent(INCOMPLETE)
 {
 	
 }
