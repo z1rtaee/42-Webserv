@@ -18,7 +18,8 @@ typedef struct s_server_info
 typedef enum _type
 {
 	SERVER,
-	CLIENT
+	CLIENT,
+	CGI
 } e_type;
 
 #endif

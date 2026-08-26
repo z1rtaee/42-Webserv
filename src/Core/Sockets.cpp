@@ -38,8 +38,8 @@ void Sockets::WebCore(void)
 			switch (SocketInfo[ind]->type)
 			{
 			case SERVER:
-			// --- New Connection ---
 				std::cout << "Server, socket nbr:" << ind << std::endl;
+			// --- New Connection ---
 				if (revents & POLLIN)
 					addClient(ind);
 			break;
@@ -54,19 +54,12 @@ void Sockets::WebCore(void)
 			// --- HangUP / Timeout exceeded ---
 				else if (revents & (POLLHUP | POLLERR) /*|| timeOut(ind)*/)
 					delSocket(ind);
-			// --- CheckFor timeout in possible client ---
-				// else if (Sockets::type[ind] == CLIENT)
-					// checkTimeout()
 			break;
-				// case CGI:
+			// case CGI:
 				// std::cout << ", socket nbr:" << ind << std::endl;
-				// --- CGI ---
-				// else if (_pollfds[i].revents & (POLLIN | POLLHUP | POLLERR) && CGI::isCGISocket(fd))
-				// recieveCgiOutput(fd, &i);
-				
-				// --- Read (CLIENTE Sends REQUEST) ---
-				// /* code */
-				// break;
+				// if (revents & (POLLIN | POLLHUP | POLLERR))
+					// handleCGI(ind);
+			// break;
 			default:
 				continue;
 			}
@@ -131,7 +124,7 @@ void	Sockets::ClientRequest(int ind)
 	// if (bread == -1)
 		// handle error
 	Rec[bread] = '\0';
-	// Client->requestReceived = Client->request.parseRequest(Rec);
+	// Client->requestReceived = Client->request.parseRequest(Rec); // uncomment this to test HTTPS
 	Client->requestReceived = COMPLETE; // delete this eventually;
 	if (Client->requestReceived == COMPLETE)
 	{
