@@ -39,14 +39,17 @@ void Sockets::WebCore(void)
 			{
 			case SERVER:
 			// --- New Connection ---
+				std::cout << "Server, socket nbr:" << ind << std::endl;
 				if (revents & POLLIN)
 					addClient(ind);
+			break;
 			case CLIENT:
+				std::cout << "CLient, socket nbr:" << ind << std::endl;
 			// --- Read (Server reads requests) ---
 				if (revents & POLLIN)
 					ClientRequest(ind);
 			// --- Write (Server writes response) ---
-				if (revents & POLLOUT)
+				else if (revents & POLLOUT)
 					ServerResponse(ind);
 			// --- HangUP / Timeout exceeded ---
 				else if (revents & (POLLHUP | POLLERR) /*|| timeOut(ind)*/)
@@ -56,6 +59,7 @@ void Sockets::WebCore(void)
 					// checkTimeout()
 			break;
 				// case CGI:
+				// std::cout << ", socket nbr:" << ind << std::endl;
 				// --- CGI ---
 				// else if (_pollfds[i].revents & (POLLIN | POLLHUP | POLLERR) && CGI::isCGISocket(fd))
 				// recieveCgiOutput(fd, &i);
@@ -66,11 +70,11 @@ void Sockets::WebCore(void)
 			default:
 				continue;
 			}
-			std::cout << "main loop" << std::endl;
 		}
 	}
 	catch(...)
 	{
+		perror("Error");
 		// deal with whatever error occurs
 	}
 }
@@ -122,14 +126,19 @@ void	Sockets::ClientRequest(int ind)
 	char		Rec[BUFFER_SIZE + 1];
 	int			bread;
 
-	std::cout << "message reveived" << std::endl;
+	std::cout << "\t\t\tmessage reveived" << std::endl;
 	bread = read (AllSockets[ind].fd, Rec, BUFFER_SIZE);
 	// if (bread == -1)
 		// handle error
 	Rec[bread] = '\0';
 	// Client->requestReceived = Client->request.parseRequest(Rec);
+	Client->requestReceived = COMPLETE; // delete this eventually;
 	if (Client->requestReceived == COMPLETE)
+	{
 		AllSockets[ind].revents = AllSockets[ind].revents - POLLIN;
+		if (AllSockets[ind].revents & POLLOUT)
+			ServerResponse(ind);
+	}
 }
 
 void	Sockets::ServerResponse(int ind)
@@ -137,7 +146,7 @@ void	Sockets::ServerResponse(int ind)
 	ClientInfo *Client = dynamic_cast<ClientInfo *>(SocketInfo[ind]);
 	int		bwriten;
 
-	std::cout << "message sent" << std::endl;
+	std::cout << "\t\t\tmessage sent" << std::endl;
 	Client->response = STDHTTPResponse();
 	while (Client->responseSent == INCOMPLETE)
 	{
@@ -148,6 +157,7 @@ void	Sockets::ServerResponse(int ind)
 			Client->responseSent = COMPLETE;
 	}
 	AllSockets[ind].revents = AllSockets[ind].revents - POLLOUT;
+	delSocket(ind); // this cant be here just like this
 }
 
 void Sockets::addClient(int ind)

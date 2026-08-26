@@ -10,11 +10,11 @@ void mota_function(void)
 	info.domain = DOMAIN;
 	info.interface = INTERFACE;
 	info.port = PORT;
-	info.protocol = PROTOCOL;
+	info.protocol = PROTOCOL; // provavelmente n vais mexer nisto
 	info.queue = QUEUE;
 	info.root = "./";
-	info.type = TYPE;
-	info.events = POLLIN;
+	info.type = TYPE; // provavelmente n vais mexer nisto
+	info.events = POLLIN; // provavelmente n vais mexer nisto
 	Sockets::addServer(info);
 }
 
@@ -25,6 +25,12 @@ int	main(/*int argc, char ** argv*/)
 	{
 		mota_function(); // mota automatiza isto!!
 		Sockets::mainLoop();
+	}
+	catch(const WebExceptions::NamingSocketWithBindException& e)
+	{
+		perror("Error");
+		std::cerr << e.what() << '\n';
+		exit(0); // this cant be here
 	}
 	catch(const WebExceptions& e)
 	{
