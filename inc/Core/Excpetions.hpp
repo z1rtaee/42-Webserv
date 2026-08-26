@@ -3,30 +3,29 @@
 
 #include "Webserv.hpp"
 
-class WebExceptions : public std::exception
+class WebExceptions
 {
 public:
-	class CreatingServerSocketException
+	class CreatingServerSocketException : public std::exception
 	{
 		public:
-		virtual const char* what() const throw();
+		const char* what() const throw();
 	};
-	class NamingSocketWithBindException
+	class NamingSocketWithBindException : public std::exception
 	{
 		public:
-		virtual const char* what() const throw();
+		const char* what() const throw();
 	};
-	class AcceptingClientsException
+	class AcceptingClientsException : public std::exception
 	{
 		public:
-		virtual const char* what() const throw();
+		const char* what() const throw();
 	};
-	class MarkingFdAsListenException
+	class MarkingFdAsListenException : public std::exception
 	{
 		public:
-		virtual const char* what() const throw();
+		const char* what() const throw();
 	};
-
 };
 
 #endif

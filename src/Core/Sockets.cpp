@@ -96,7 +96,7 @@ int Sockets::find(int SocketID)
 
 void	Sockets::delEverything()
 {
-	while (AllSockets.size())
+	while (!AllSockets.empty())
 		delSocket(0);	
 }
 
@@ -191,7 +191,10 @@ void Sockets::addServer(t_info &Config)
 	ServerInfo *Server = new ServerInfo(Config);
 
 	if (bind(fd, (struct sockaddr *)&(Server->SvAddStruct), sizeof(Server->SvAddStruct)) == -1)
+	{
+		delete (Server);
 		throw WebExceptions::NamingSocketWithBindException();
+	}
 
 	if (listen(fd, Config.queue) == -1)
 		throw WebExceptions::MarkingFdAsListenException();

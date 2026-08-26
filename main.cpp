@@ -26,17 +26,10 @@ int	main(/*int argc, char ** argv*/)
 		mota_function(); // mota automatiza isto!!
 		Sockets::mainLoop();
 	}
-	catch(const WebExceptions::NamingSocketWithBindException& e)
+	catch(...)
 	{
 		perror("Error");
-		std::cerr << e.what() << '\n';
-		exit(0); // this cant be here
 	}
-	catch(const WebExceptions& e)
-	{
-		perror("Error");
-		std::cerr << e.what() << '\n';
-	}
-	Sockets::delEverything();
 	std::cout << "closing everything beautifully" << std::endl;
+	Sockets::delEverything();
 }
