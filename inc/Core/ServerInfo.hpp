@@ -16,7 +16,6 @@ public:
 	ServerInfo(t_info ref);
 	ServerInfo(void);
 	~ServerInfo();
-	ServerInfo &operator=(ServerInfo &ref);
 };
 
 #endif

@@ -24,7 +24,8 @@ private:
 	static void WebCore(void); // main logic behind the server
 	static int	find(int SocketID); // returns the index of the SocketID on success, returns -1 on error
 	static void	addClient(int ind); // adds the ClientSocketID from the list of ClientSockets, does nothing if it doesnt exist
-
+	static void	handleCGI(int ind);
+	static void addCGI(int ind);
 };
 
 #endif

@@ -22,11 +22,6 @@ Info(SERVER)
 {
 }
 
-ServerInfo &ServerInfo::operator=(ServerInfo &ref)
-{
-	return (*this);
-}
-
 ServerInfo::~ServerInfo()
 {
 }

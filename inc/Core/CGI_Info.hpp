@@ -1,16 +1,16 @@
-#ifndef JJ_CLIENTINFO_HPP
-# define JJ_CLIENTINFO_HPP
+#ifndef JJ_CGI_INFO_HPP
+# define JJ_CGI_INFO_HPP
 
 #include "Webserv.hpp"
 
 class ServerInfo;
 
-class ClientInfo : public Info
+class CGI_Info : public Info
 {
 private:
 	int func();
 public:
-	ServerInfo	&ServerRef;
+	ClientInfo	&ClientRef;
 
 	Request				request;
 	ParseStatus	requestReceived;
@@ -18,8 +18,8 @@ public:
 	std::string			response;
 	ParseStatus	responseSent;
 	
-	ClientInfo(ServerInfo	&inf);
-	~ClientInfo();
+	CGI_Info(ClientInfo	&inf);
+	~CGI_Info();
 };
 
 #endif

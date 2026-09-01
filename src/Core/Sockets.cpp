@@ -42,7 +42,7 @@ void Sockets::WebCore(void)
 			// --- New Connection ---
 				if (revents & POLLIN)
 					addClient(ind);
-			break;
+				break;
 			case CLIENT:
 				std::cout << "CLient, socket nbr:" << ind << std::endl;
 			// --- Read (Server reads requests) ---
@@ -54,12 +54,13 @@ void Sockets::WebCore(void)
 			// --- HangUP / Timeout exceeded ---
 				else if (revents & (POLLHUP | POLLERR) /*|| timeOut(ind)*/)
 					delSocket(ind);
-			break;
-			// case CGI:
-				// std::cout << ", socket nbr:" << ind << std::endl;
-				// if (revents & (POLLIN | POLLHUP | POLLERR))
-					// handleCGI(ind);
-			// break;
+				break;
+			case CGI:
+				std::cout << "CGI, socket nbr:" << ind << std::endl;
+			// --- CGI ---
+				if (revents & (POLLIN | POLLHUP | POLLERR))
+					handleCGI(ind);
+				break;
 			default:
 				continue;
 			}
@@ -70,6 +71,11 @@ void Sockets::WebCore(void)
 		perror("Error");
 		// deal with whatever error occurs
 	}
+}
+
+void Sockets::handleCGI(int ind)
+{
+	
 }
 
 int Sockets::operator[](int ind)
@@ -113,6 +119,11 @@ Location: http://example.com/users/123\r\n\
 );
 }
 
+void	Sockets::addCGI(int ind)
+{
+	
+}
+
 void	Sockets::ClientRequest(int ind)
 {
 	ClientInfo	*Client = dynamic_cast<ClientInfo *>(SocketInfo[ind]);
@@ -124,14 +135,15 @@ void	Sockets::ClientRequest(int ind)
 	// if (bread == -1)
 		// handle error
 	Rec[bread] = '\0';
-	// Client->requestReceived = Client->request.parseRequest(Rec); // uncomment this to test HTTPS
-	Client->requestReceived = COMPLETE; // delete this eventually;
+	// Client->requestReceived = Client->request.parseRequest(Rec); // uncomment this to test HTTP request
+	Client->requestReceived = COMPLETE; // delete this and add HTTP request;
 	if (Client->requestReceived == COMPLETE)
 	{
-		AllSockets[ind].revents = AllSockets[ind].revents - POLLIN;
-		if (AllSockets[ind].revents & POLLOUT)
-			ServerResponse(ind);
+		AllSockets[ind].events = POLLOUT;
+		AllSockets[ind].revents = 0;
 	}
+	else if (Client->requestReceived == CGI)
+		addCGI(ind);
 }
 
 void	Sockets::ServerResponse(int ind)
@@ -140,7 +152,7 @@ void	Sockets::ServerResponse(int ind)
 	int		bwriten;
 
 	std::cout << "\t\t\tmessage sent" << std::endl;
-	Client->response = STDHTTPResponse();
+	Client->response = STDHTTPResponse(); // delete this and add HTTP response
 	while (Client->responseSent == INCOMPLETE)
 	{
 		bwriten = BUFFER_SIZE * (BUFFER_SIZE > Client->response.size()) + Client->response.size() * (Client->response.size() > BUFFER_SIZE);
@@ -165,13 +177,14 @@ void Sockets::addClient(int ind)
 
 	struct pollfd New_pollfd;
 
-	New_pollfd.events = POLLIN | POLLHUP | POLLOUT | POLLERR;
+	New_pollfd.events = POLLIN;
 	New_pollfd.fd = fd;
 	New_pollfd.revents = 0;
 
+	std::cout << "\t\t\tadded new client" << std::endl;
+
 	SocketInfo.push_back(new ClientInfo(*(dynamic_cast<ServerInfo *>(SocketInfo[ind]))));
 	AllSockets.push_back(New_pollfd);
-	std::cout << "\t\t\tadded new client" << std::endl;
 }
 
 void Sockets::addServer(t_info &Config)
