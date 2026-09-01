@@ -224,10 +224,16 @@ Sockets::Sockets()
 {
 }
 
+void Sockets::delCGI(CGI_Info *ref)
+{
+
+	delete (ref);
+}
+
 void	Sockets::delSocket(int ind)
 {
 	if (dynamic_cast<ClientInfo *>(SocketInfo[ind]))
-		delete ((dynamic_cast<ClientInfo *>(SocketInfo[ind]))->CGIref);
+		delCGI ((dynamic_cast<ClientInfo *>(SocketInfo[ind]))->CGIref);
 	delete (SocketInfo[ind]);
 	close (AllSockets[ind].fd);
 	SocketInfo.erase(SocketInfo.begin() + ind);

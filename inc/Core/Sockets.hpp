@@ -26,6 +26,7 @@ private:
 	static void	addClient(int ind); // adds the ClientSocketID from the list of ClientSockets, does nothing if it doesnt exist
 	static void	handleCGI(int ind);
 	static void addCGI(int ind);
+	static void delCGI(CGI_Info *ref);
 };
 
 #endif
