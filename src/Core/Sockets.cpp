@@ -6,7 +6,7 @@ std::vector<Info *>			Sockets::SocketInfo;
 
 extern int	G_STOP_VAR;
 
-void Sockets::mainLoop(void)
+void	Sockets::mainLoop(void)
 {
 	while (G_STOP_VAR)
 	{
@@ -27,7 +27,7 @@ void Sockets::mainLoop(void)
 }
 
 // comments stolen from raquel :P
-void Sockets::WebCore(void)
+void	Sockets::WebCore(void)
 {
 	try
 	{
@@ -73,7 +73,7 @@ void Sockets::WebCore(void)
 	}
 }
 
-void Sockets::handleCGI(int ind)
+void	Sockets::handleCGI(int ind)
 {
 	
 }
@@ -121,7 +121,7 @@ Location: http://example.com/users/123\r\n\
 
 void	Sockets::addCGI(int ind)
 {
-	
+
 }
 
 void	Sockets::ClientRequest(int ind)
@@ -132,8 +132,11 @@ void	Sockets::ClientRequest(int ind)
 
 	std::cout << "\t\t\tmessage reveived" << std::endl;
 	bread = read (AllSockets[ind].fd, Rec, BUFFER_SIZE);
-	// if (bread == -1)
-		// handle error
+	if (bread == -1)
+	{
+		delSocket(ind);
+		return;
+	}
 	Rec[bread] = '\0';
 	// Client->requestReceived = Client->request.parseRequest(Rec); // uncomment this to test HTTP request
 	Client->requestReceived = COMPLETE; // delete this and add HTTP request;
@@ -152,20 +155,22 @@ void	Sockets::ServerResponse(int ind)
 	int		bwriten;
 
 	std::cout << "\t\t\tmessage sent" << std::endl;
-	Client->response = STDHTTPResponse(); // delete this and add HTTP response
-	while (Client->responseSent == INCOMPLETE)
+	if (Client->response.empty())
+		Client->response = STDHTTPResponse(); // delete this and add HTTP response
+	bwriten = write (AllSockets[ind].fd, Client->response.c_str(), Client->response.size());
+	if (bwriten < 0)
+		return delSocket(ind);
+	Client->response.erase(0, bwriten);
+	if (Client->response.empty())
 	{
-		bwriten = BUFFER_SIZE * (BUFFER_SIZE > Client->response.size()) + Client->response.size() * (Client->response.size() > BUFFER_SIZE);
-		bwriten = write (AllSockets[ind].fd, Client->response.c_str(), bwriten);
-		Client->response.erase(0, bwriten);
-		if (bwriten <= 0 || Client->response.empty())
-			Client->responseSent = COMPLETE;
+		Client->responseSent = COMPLETE;
+		AllSockets[ind].events = POLLIN;
+		AllSockets[ind].revents = 0;
 	}
-	AllSockets[ind].revents = AllSockets[ind].revents - POLLOUT;
 	delSocket(ind); // this cant be here just like this
 }
 
-void Sockets::addClient(int ind)
+void	Sockets::addClient(int ind)
 {
 	ServerInfo *Server = dynamic_cast<ServerInfo *>(SocketInfo[ind]);
 
@@ -187,7 +192,7 @@ void Sockets::addClient(int ind)
 	AllSockets.push_back(New_pollfd);
 }
 
-void Sockets::addServer(t_info &Config)
+void	Sockets::addServer(t_info &Config)
 {
 	int	fd = socket(Config.domain, Config.type, Config.protocol);
 
@@ -221,6 +226,8 @@ Sockets::Sockets()
 
 void	Sockets::delSocket(int ind)
 {
+	if (dynamic_cast<ClientInfo *>(SocketInfo[ind]))
+		delete ((dynamic_cast<ClientInfo *>(SocketInfo[ind]))->CGIref);
 	delete (SocketInfo[ind]);
 	close (AllSockets[ind].fd);
 	SocketInfo.erase(SocketInfo.begin() + ind);

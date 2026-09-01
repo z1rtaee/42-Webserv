@@ -15,7 +15,7 @@ void mota_function(void)
 	info.root = "./";
 	info.type = TYPE; // provavelmente n vais mexer nisto
 	info.events = POLLIN; // provavelmente n vais mexer nisto
-	Sockets::addServer(info);
+	// Sockets::addServer(info);
 }
 
 int	main(/*int argc, char ** argv*/)

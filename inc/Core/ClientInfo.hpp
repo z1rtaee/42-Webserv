@@ -11,6 +11,7 @@ private:
 	int func();
 public:
 	ServerInfo	&ServerRef;
+	CGI_Info	*CGIref;
 
 	Request				request;
 	ParseStatus	requestReceived;
