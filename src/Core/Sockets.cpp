@@ -42,6 +42,8 @@ void	Sockets::WebCore(void)
 			// --- New Connection ---
 				if (revents & POLLIN)
 					addClient(ind);
+				if (revents & POLLHUP || revents & POLLERR)
+					delSocket(ind);
 				break;
 			case CLIENT:
 				std::cout << "CLient, socket nbr:" << ind << std::endl;
@@ -52,14 +54,16 @@ void	Sockets::WebCore(void)
 				else if (revents & POLLOUT)
 					ServerResponse(ind);
 			// --- HangUP / Timeout exceeded ---
-				else if (revents & (POLLHUP | POLLERR) /*|| timeOut(ind)*/)
+				if (revents & POLLHUP || revents & POLLERR /*|| timeOut(ind)*/)
 					delSocket(ind);
 				break;
 			case CGI:
 				std::cout << "CGI, socket nbr:" << ind << std::endl;
 			// --- CGI ---
-				if (revents & (POLLIN | POLLHUP | POLLERR))
+				if (revents & POLLIN)
 					handleCGI(ind);
+				if (revents & POLLHUP || revents & POLLERR /*|| timeOut(ind)*/)
+					delSocket(ind);
 				break;
 			default:
 				continue;
@@ -75,7 +79,23 @@ void	Sockets::WebCore(void)
 
 void	Sockets::handleCGI(int ind)
 {
+	CGI_Info *cgi = dynamic_cast<CGI_Info *>(SocketInfo[ind]);
+
+	switch (cgi->state)
+	{
+	case READING:
+		/* code */
+		break;
+	// case start:
+	// 	/* code */
+	// 	break;
+	// case start:
+	// 	/* code */
+	// 	break;
 	
+	default:
+		break;
+	}
 }
 
 int Sockets::operator[](int ind)
@@ -121,7 +141,25 @@ Location: http://example.com/users/123\r\n\
 
 void	Sockets::addCGI(int ind)
 {
+	ClientInfo *Client = dynamic_cast<ClientInfo *>(SocketInfo[ind]);
+	CGI_Info	*cgi;
 
+	cgi = new CGI_Info(*Client, "ls" /*, Client->request.file*/); //!! add dynamic file
+
+	if (pipe(cgi->pfd)== -1)
+		throw WebExceptions::CreatingServerSocketException(); //!! wrong exception
+
+	struct pollfd New_pollfd;
+
+	New_pollfd.events = POLLIN;
+	New_pollfd.fd = cgi->pfd[0];
+	New_pollfd.revents = 0;
+
+	AllSockets.push_back(New_pollfd);
+	SocketInfo.push_back(cgi);
+
+	cgi->execCGI();
+	std::cout << "\t\t\tadded new CGI" << std::endl;
 }
 
 void	Sockets::ClientRequest(int ind)
@@ -132,20 +170,17 @@ void	Sockets::ClientRequest(int ind)
 
 	std::cout << "\t\t\tmessage reveived" << std::endl;
 	bread = read (AllSockets[ind].fd, Rec, BUFFER_SIZE);
-	if (bread == -1)
-	{
-		delSocket(ind);
-		return;
-	}
+	if (bread < 0)
+		return delSocket(ind);
 	Rec[bread] = '\0';
-	// Client->requestReceived = Client->request.parseRequest(Rec); // uncomment this to test HTTP request
-	Client->requestReceived = COMPLETE; // delete this and add HTTP request;
-	if (Client->requestReceived == COMPLETE)
+	// Client->requestStatus = Client->request.parseRequest(Rec); // uncomment this to test HTTP request
+	Client->requestStatus = COMPLETE; // delete this
+	if (Client->request.parseRequest(Rec) == COMPLETE)
 	{
 		AllSockets[ind].events = POLLOUT;
 		AllSockets[ind].revents = 0;
 	}
-	else if (Client->requestReceived == CGI)
+	else if (Client->requestStatus == CGI)
 		addCGI(ind);
 }
 
@@ -163,7 +198,6 @@ void	Sockets::ServerResponse(int ind)
 	Client->response.erase(0, bwriten);
 	if (Client->response.empty())
 	{
-		Client->responseSent = COMPLETE;
 		AllSockets[ind].events = POLLIN;
 		AllSockets[ind].revents = 0;
 	}
@@ -226,7 +260,6 @@ Sockets::Sockets()
 
 void Sockets::delCGI(CGI_Info *ref)
 {
-
 	delete (ref);
 }
 
@@ -234,6 +267,8 @@ void	Sockets::delSocket(int ind)
 {
 	if (dynamic_cast<ClientInfo *>(SocketInfo[ind]))
 		delCGI ((dynamic_cast<ClientInfo *>(SocketInfo[ind]))->CGIref);
+	// if (dynamic_cast<ServerInfo *>(SocketInfo[ind]))
+		// dellAllClients ((dynamic_cast<ClientInfo *>(SocketInfo[ind]))->CGIref);
 	delete (SocketInfo[ind]);
 	close (AllSockets[ind].fd);
 	SocketInfo.erase(SocketInfo.begin() + ind);

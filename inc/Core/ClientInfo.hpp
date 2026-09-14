@@ -11,14 +11,14 @@ private:
 	int func();
 public:
 	ServerInfo	&ServerRef;
-	CGI_Info	*CGIref;
+	// CGI_Info	*CGIref;
 
-	Request				request;
-	ParseStatus	requestReceived;
-	
-	std::string			response;
-	ParseStatus	responseSent;
-	
+	Request		request;
+	ParseStatus	requestStatus;
+
+	std::string	response;
+	ParseStatus	responseStatus;
+
 	ClientInfo(ServerInfo	&inf);
 	~ClientInfo();
 };

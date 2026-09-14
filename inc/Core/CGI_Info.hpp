@@ -11,15 +11,19 @@ private:
 	int func();
 public:
 	ClientInfo	&ClientRef;
+	int			pfd[2];
 
-	Request				request;
-	ParseStatus	requestReceived;
-	
-	std::string			response;
-	ParseStatus	responseSent;
-	
-	CGI_Info(ClientInfo	&inf);
-	~CGI_Info();
+	std::string	Exec;
+
+	e_CGIState	state;
+
+	std::string	response;
+	ParseStatus	responseStatus;
+
+	CGI_Info(ClientInfo	&inf, std::string file);
+	~CGI_Info(void);
+
+	void execCGI();
 };
 
 #endif

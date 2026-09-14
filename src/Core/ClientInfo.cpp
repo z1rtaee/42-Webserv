@@ -10,9 +10,17 @@ ClientInfo::ClientInfo(ServerInfo &ServerRef):
 Info(CLIENT),
 ServerRef(ServerRef),
 request(),
-requestReceived(INCOMPLETE),
-response(""),
-responseSent(INCOMPLETE)
+requestStatus(INCOMPLETE),
+response(),
+responseStatus(INCOMPLETE)
 {
-	
 }
+
+ClientInfo::~ClientInfo()
+{
+}
+
+// char** CGI_Info::createEnvFromHTTP()
+// {
+// 
+// }

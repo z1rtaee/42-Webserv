@@ -17,9 +17,15 @@ typedef struct s_server_info
 
 typedef enum _type
 {
-	SERVER,
+	SERVER = 1000,
 	CLIENT,
 	CGI
 } e_type;
+
+typedef enum _CGIState
+{
+	READING = 500,
+	WRITING
+} e_CGIState;
 
 #endif
