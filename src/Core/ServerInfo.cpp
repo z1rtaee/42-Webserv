@@ -1,5 +1,6 @@
 #include "Webserv.hpp"
-#include "Core/LocalCore.hpp"
+
+void jj_memset(char *str, int size);
 
 int ServerInfo::func()
 {

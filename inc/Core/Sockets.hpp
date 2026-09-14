@@ -1,7 +1,17 @@
 #ifndef JJ_SOCKETS_HPP
 # define JJ_SOCKETS_HPP
 
-#include "Webserv.hpp"
+#include <string>
+#include <vector>
+#include "Core/structs.hpp"
+#include "Core/CGI_Info.hpp"
+#include "Core/Info.hpp"
+#include <poll.h>
+
+class CGI_Info;
+class Info;
+class ServerInfo;
+class ClientInfo;
 
 class Sockets
 {
@@ -26,7 +36,9 @@ private:
 	static void	addClient(int ind); // adds the ClientSocketID from the list of ClientSockets, does nothing if it doesnt exist
 	static void	handleCGI(int ind);
 	static void addCGI(int ind);
-	static void delCGI(CGI_Info *ref);
+	static void removeRefClient(ClientInfo *ref);
+	static void dellAllClients(ServerInfo* ref);
+	static void removeRefCGI(CGI_Info *Ref);
 };
 
 #endif

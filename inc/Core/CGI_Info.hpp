@@ -1,26 +1,37 @@
 #ifndef JJ_CGI_INFO_HPP
 # define JJ_CGI_INFO_HPP
 
-#include "Webserv.hpp"
+#include "HTTP/Request.hpp"
+#include "Core/Info.hpp"
+#include "Core/ClientInfo.hpp"
+#include "Core/structs.hpp"
+#include "Core/Info.hpp"
+#include "string"
 
+class Info;
 class ServerInfo;
+class ClientInfo;
 
 class CGI_Info : public Info
 {
 private:
 	int func();
+	std::vector<std::string>	env;
 public:
-	ClientInfo	&ClientRef;
-	int			pfd[2];
+	ClientInfo		*ClientRef;
+	struct pollfd	*ClientSocket;
+	int				pfd[2];
+	int				pid;
+	int				state;
 
-	std::string	Exec;
+	std::string	file;
 
-	e_CGIState	state;
 
 	std::string	response;
 	ParseStatus	responseStatus;
 
-	CGI_Info(ClientInfo	&inf, std::string file);
+	std::vector<std::string> getCGI_env(std::string path);
+	CGI_Info(ClientInfo *ClientRef, struct pollfd *ClientSocket, std::string file);
 	~CGI_Info(void);
 
 	void execCGI();

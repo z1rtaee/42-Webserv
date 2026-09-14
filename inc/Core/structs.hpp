@@ -1,11 +1,14 @@
 #ifndef JJ_STRUCTS_HPP
 # define JJ_STRUCTS_HPP
 
-#include "Webserv.hpp"
+#include <string>
 
 typedef struct s_server_info 
 {
 	std::string	root;
+	std::string	ABSroot;
+	std::string	RELroot;
+	std::string	name;
 	int			domain;
 	int			type;
 	int			protocol;
@@ -21,11 +24,5 @@ typedef enum _type
 	CLIENT,
 	CGI
 } e_type;
-
-typedef enum _CGIState
-{
-	READING = 500,
-	WRITING
-} e_CGIState;
 
 #endif

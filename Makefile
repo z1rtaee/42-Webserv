@@ -32,7 +32,7 @@ HTTP_SRCS		= clean.cpp
 HTTP			= $(addprefix $(HTTP_PATH), $(HTTP_SRCS))
 
 CORE_PATH		= src/Core/
-CORE_SRCS		= ClientInfo.cpp Excpetions.cpp Info.cpp ServerInfo.cpp Sockets.cpp aux.cpp TestingEnvironment.cpp
+CORE_SRCS		= CGI_Info.cpp ClientInfo.cpp Excpetions.cpp Info.cpp ServerInfo.cpp Sockets.cpp TestingEnvironment.cpp aux.cpp
 CORE			= $(addprefix $(CORE_PATH), $(CORE_SRCS))
 
 TOTAL_SRCS		= $(words $(SRCS))

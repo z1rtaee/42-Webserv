@@ -1,10 +1,16 @@
 #include "Webserv.hpp"
-#include "../../inc/HTTP/Request.hpp"
+#include "HTTP/Request.hpp"
+#include <sys/wait.h>
 
 std::vector<struct pollfd>	Sockets::AllSockets;
 std::vector<Info *>			Sockets::SocketInfo;
 
 extern int	G_STOP_VAR;
+
+class CGI_Info;
+class Info;
+class ServerInfo;
+class ClientInfo;
 
 void	Sockets::mainLoop(void)
 {
@@ -62,6 +68,7 @@ void	Sockets::WebCore(void)
 			// --- CGI ---
 				if (revents & POLLIN)
 					handleCGI(ind);
+			// --- HangUP / Timeout exceeded ---
 				if (revents & POLLHUP || revents & POLLERR /*|| timeOut(ind)*/)
 					delSocket(ind);
 				break;
@@ -79,23 +86,18 @@ void	Sockets::WebCore(void)
 
 void	Sockets::handleCGI(int ind)
 {
-	CGI_Info *cgi = dynamic_cast<CGI_Info *>(SocketInfo[ind]);
+	CGI_Info	*cgi = dynamic_cast<CGI_Info *>(SocketInfo[ind]);
+	char		str[BUFFER_SIZE + 1];
+	int			bread;
 
-	switch (cgi->state)
-	{
-	case READING:
-		/* code */
-		break;
-	// case start:
-	// 	/* code */
-	// 	break;
-	// case start:
-	// 	/* code */
-	// 	break;
-	
-	default:
-		break;
-	}
+	bread = read (cgi->pfd[0], str, BUFFER_SIZE);
+	if (bread < 0)
+			throw WebExceptions::CreatingServerSocketException(); // !!wrong exception
+	str[bread] = '\0';
+	cgi->ClientRef->response = cgi->ClientRef->response + str;
+	cgi->responseStatus = COMPLETE;
+	if (cgi->responseStatus == COMPLETE)
+		AllSockets[ind].revents = POLLHUP;
 }
 
 int Sockets::operator[](int ind)
@@ -125,7 +127,6 @@ const char *STDHTTPResponse()
 "HTTP/1.1 201 Created\r\n\
 Content-Type: application/json\r\n\
 Location: http://example.com/users/123\r\n\
-\r\n\
 {\r\n\
   message: New user created,\r\n\
   user: {\r\n\
@@ -139,15 +140,26 @@ Location: http://example.com/users/123\r\n\
 );
 }
 
+std::string STDHTTPCGIResponse(std::string &str)
+{
+	str = "HTTP/1.1 201 Created\r\n\
+Content-Type: application/json\r\n\
+Location: http://example.com/users/123\r\n" + str + "\r\n\r\n";
+	return (str);
+}
+
 void	Sockets::addCGI(int ind)
 {
 	ClientInfo *Client = dynamic_cast<ClientInfo *>(SocketInfo[ind]);
 	CGI_Info	*cgi;
 
-	cgi = new CGI_Info(*Client, "ls" /*, Client->request.file*/); //!! add dynamic file
+	cgi = new CGI_Info(Client, &(AllSockets[ind]), "ls" /*, Client->request.file*/); //!! add dynamic file
 
 	if (pipe(cgi->pfd)== -1)
+	{
+		delete (cgi);
 		throw WebExceptions::CreatingServerSocketException(); //!! wrong exception
+	}
 
 	struct pollfd New_pollfd;
 
@@ -168,20 +180,26 @@ void	Sockets::ClientRequest(int ind)
 	char		Rec[BUFFER_SIZE + 1];
 	int			bread;
 
-	std::cout << "\t\t\tmessage reveived" << std::endl;
+	std::cout << "\t\t\tmessage reveived:" << std::endl;
 	bread = read (AllSockets[ind].fd, Rec, BUFFER_SIZE);
 	if (bread < 0)
 		return delSocket(ind);
 	Rec[bread] = '\0';
 	// Client->requestStatus = Client->request.parseRequest(Rec); // uncomment this to test HTTP request
 	Client->requestStatus = COMPLETE; // delete this
-	if (Client->request.parseRequest(Rec) == COMPLETE)
+	std::cout << Rec << std::endl;
+	std::cout << "\t\t\tI jet read " << bread << " bytes" << std::endl;
+	if (Client->requestStatus == COMPLETE)
 	{
 		AllSockets[ind].events = POLLOUT;
 		AllSockets[ind].revents = 0;
 	}
-	else if (Client->requestStatus == CGI)
+	else if (Client->requestStatus == 1000)
+	{
+		AllSockets[ind].revents = 0;
+		AllSockets[ind].events = 0;
 		addCGI(ind);
+	}
 }
 
 void	Sockets::ServerResponse(int ind)
@@ -189,9 +207,11 @@ void	Sockets::ServerResponse(int ind)
 	ClientInfo *Client = dynamic_cast<ClientInfo *>(SocketInfo[ind]);
 	int		bwriten;
 
-	std::cout << "\t\t\tmessage sent" << std::endl;
-	if (Client->response.empty())
+	if (Client->response.empty() && Client->requestStatus == COMPLETE) // substitute with COMPLETE
 		Client->response = STDHTTPResponse(); // delete this and add HTTP response
+	if (Client->response.empty() && Client->requestStatus == 1000) // substitute with CGI
+		Client->response = STDHTTPCGIResponse(Client->response); // delete this and add HTTP CGI response
+	std::cout << "\t\t\tabout to write:" << std::endl << Client->response << std::endl;
 	bwriten = write (AllSockets[ind].fd, Client->response.c_str(), Client->response.size());
 	if (bwriten < 0)
 		return delSocket(ind);
@@ -201,7 +221,7 @@ void	Sockets::ServerResponse(int ind)
 		AllSockets[ind].events = POLLIN;
 		AllSockets[ind].revents = 0;
 	}
-	delSocket(ind); // this cant be here just like this
+	std::cout << "\t\t\tmessage sent with " << bwriten << " characters" << std::endl;
 }
 
 void	Sockets::addClient(int ind)
@@ -222,7 +242,7 @@ void	Sockets::addClient(int ind)
 
 	std::cout << "\t\t\tadded new client" << std::endl;
 
-	SocketInfo.push_back(new ClientInfo(*(dynamic_cast<ServerInfo *>(SocketInfo[ind]))));
+	SocketInfo.push_back(new ClientInfo((dynamic_cast<ServerInfo *>(SocketInfo[ind]))));
 	AllSockets.push_back(New_pollfd);
 }
 
@@ -258,17 +278,41 @@ Sockets::Sockets()
 {
 }
 
-void Sockets::delCGI(CGI_Info *ref)
+void Sockets::removeRefClient(ClientInfo *ref)
 {
-	delete (ref);
+	if (ref->CGIref)
+	{
+		ref->CGIref->ClientRef = NULL; // no dangling pointers on my watch
+	}
+}
+
+void Sockets::dellAllClients(ServerInfo *ref)
+{
+	for (int ind = 0; ind < SocketInfo.size(); ind++)
+		while (ind < SocketInfo.size() && \
+				dynamic_cast<ClientInfo *>(SocketInfo[ind]) && \
+				(dynamic_cast<ClientInfo *>(SocketInfo[ind]))->ServerRef == ref)
+			delSocket(0);
+}
+
+void Sockets::removeRefCGI(CGI_Info *ref)
+{
+	if (ref->ClientRef)
+	{
+		ref->ClientRef->CGIref = NULL; // no dangling pointers on my watch
+	}
 }
 
 void	Sockets::delSocket(int ind)
 {
+	std::cout << "\t\t\t\t\tdeleting" << std::endl;
 	if (dynamic_cast<ClientInfo *>(SocketInfo[ind]))
-		delCGI ((dynamic_cast<ClientInfo *>(SocketInfo[ind]))->CGIref);
-	// if (dynamic_cast<ServerInfo *>(SocketInfo[ind]))
-		// dellAllClients ((dynamic_cast<ClientInfo *>(SocketInfo[ind]))->CGIref);
+		removeRefClient ((dynamic_cast<ClientInfo *>(SocketInfo[ind])));
+	else if (dynamic_cast<ServerInfo *>(SocketInfo[ind]))
+		dellAllClients ((dynamic_cast<ServerInfo *>(SocketInfo[ind])));
+	else if (dynamic_cast<CGI_Info *>(SocketInfo[ind]))
+		removeRefCGI ((dynamic_cast<CGI_Info *>(SocketInfo[ind])));
+
 	delete (SocketInfo[ind]);
 	close (AllSockets[ind].fd);
 	SocketInfo.erase(SocketInfo.begin() + ind);

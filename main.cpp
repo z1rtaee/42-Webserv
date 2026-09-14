@@ -12,10 +12,12 @@ void mota_function(void)
 	info.port = PORT;
 	info.protocol = PROTOCOL; // provavelmente n vais mexer nisto
 	info.queue = QUEUE;
-	info.root = "./";
+	info.root = "/";
+	info.ABSroot = "/home/jlima-so/42/ms5/42-Webserv"; // como mudar isto de computador pra computador?
+	info.name = "www.WebServing.com";
 	info.type = TYPE; // provavelmente n vais mexer nisto
 	info.events = POLLIN; // provavelmente n vais mexer nisto
-	// Sockets::addServer(info);
+	Sockets::addServer(info);
 }
 
 int	main(/*int argc, char ** argv*/)

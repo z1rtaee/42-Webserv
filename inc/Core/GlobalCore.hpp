@@ -29,7 +29,7 @@
 # include "Sockets.hpp"
 # include "ServerInfo.hpp"
 # include "ClientInfo.hpp"
-# include "Excpetions.hpp"
 # include "CGI_Info.hpp"
+# include "Excpetions.hpp"
 
 #endif
