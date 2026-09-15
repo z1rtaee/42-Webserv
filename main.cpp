@@ -14,7 +14,7 @@ void mota_function(void)
 	info.queue = QUEUE;
 	info.root = "/";
 	info.ABSroot = "/home/jlima-so/42/ms5/42-Webserv"; // como mudar isto de computador pra computador?
-	info.name = "www.WebServing.com";
+	info.name = "www.webserving.com";
 	info.type = TYPE; // provavelmente n vais mexer nisto
 	info.events = POLLIN; // provavelmente n vais mexer nisto
 	Sockets::addServer(info);

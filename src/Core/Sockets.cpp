@@ -95,9 +95,17 @@ void	Sockets::handleCGI(int ind)
 			throw WebExceptions::CreatingServerSocketException(); // !!wrong exception
 	str[bread] = '\0';
 	cgi->ClientRef->response = cgi->ClientRef->response + str;
-	cgi->responseStatus = COMPLETE;
+	if (cgi->state == 0)
+		cgi->state = waitpid(cgi->pid, NULL, WNOHANG);
+	if (cgi->state > 0 && bread < BUFFER_SIZE) // !! is this correct???????
+		cgi->responseStatus = COMPLETE;
+	else if (cgi->state < 0)
+		throw WebExceptions::CreatingServerSocketException(); // !!wrong exception
 	if (cgi->responseStatus == COMPLETE)
+	{
+		cgi->ClientSocket->events = POLLOUT;
 		AllSockets[ind].revents = POLLHUP;
+	}
 }
 
 int Sockets::operator[](int ind)
@@ -299,6 +307,7 @@ void Sockets::removeRefCGI(CGI_Info *ref)
 {
 	if (ref->ClientRef)
 	{
+		close(ref->pfd[0]);
 		ref->ClientRef->CGIref = NULL; // no dangling pointers on my watch
 	}
 }

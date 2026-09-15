@@ -30,7 +30,7 @@ public:
 	std::string	response;
 	ParseStatus	responseStatus;
 
-	std::vector<std::string> getCGI_env(std::string path);
+	void	getCGI_env();
 	CGI_Info(ClientInfo *ClientRef, struct pollfd *ClientSocket, std::string file);
 	~CGI_Info(void);
 
