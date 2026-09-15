@@ -28,17 +28,18 @@ private:
 	static std::vector<struct pollfd>	AllSockets; // Vector with all Sockets to be monitored by the poll() loop.
 	static std::vector<Info *>			SocketInfo; // Vector with all info related the sockets
 
-	static void ClientRequest(int ind);
-	static void ServerResponse(int ind);
+	static void	ClientRequest(int ind);
+	static void	ServerResponse(int ind);
 	static void	delSocket(int ind); // deletes the SocketID from the list of sockets, does nothing if it doesnt exist
-	static void WebCore(void); // main logic behind the server
+	static void	WebCore(void); // main logic behind the server
 	static int	find(int SocketID); // returns the index of the SocketID on success, returns -1 on error
 	static void	addClient(int ind); // adds the ClientSocketID from the list of ClientSockets, does nothing if it doesnt exist
 	static void	handleCGI(int ind);
-	static void addCGI(int ind);
-	static void removeRefClient(ClientInfo *ref);
-	static void dellAllClients(ServerInfo* ref);
-	static void removeRefCGI(CGI_Info *Ref);
+	static void	addCGI(int ind);
+	static void	removeRefClient(ClientInfo *ref);
+	static void	dellAllClients(ServerInfo* ref);
+	static void	removeRefCGI(CGI_Info *Ref);
+	static int	timeOut(int ind);
 };
 
 #endif

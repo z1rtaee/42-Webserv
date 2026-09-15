@@ -15,6 +15,7 @@ private:
 public:
 	t_info		 		Config;
 	struct sockaddr_in	SvAddStruct;
+	
 
 	ServerInfo(t_info ref);
 	ServerInfo(void);

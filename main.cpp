@@ -1,7 +1,7 @@
 # include "Webserv.hpp"
 # include <signal.h>
 
-void TestingEnvironment(void);
+void FunctionalEnv(void);
 
 void mota_function(void)
 {
@@ -22,15 +22,19 @@ void mota_function(void)
 
 int	main(/*int argc, char ** argv*/)
 {
-	// TestingEnvironment();
+	FunctionalEnv();
 	try
 	{
 		mota_function(); // mota automatiza isto!!
 		Sockets::mainLoop();
 	}
-	catch(...)
+	catch(WebExceptions &e)
 	{
-		perror("Error");
+		std::cout << e.what() << std::endl;
+	}
+	catch(std::exception &e)
+	{
+		std::cout << e.what() << std::endl;
 	}
 	std::cout << "closing everything beautifully" << std::endl;
 	Sockets::delEverything();

@@ -7,7 +7,6 @@ typedef struct s_server_info
 {
 	std::string	root;
 	std::string	ABSroot;
-	std::string	RELroot;
 	std::string	name;
 	int			domain;
 	int			type;

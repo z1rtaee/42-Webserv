@@ -3,29 +3,58 @@
 
 #include "Webserv.hpp"
 
-class WebExceptions
+class WebExceptions : public std::exception
 {
 public:
-	class CreatingServerSocketException : public std::exception
-	{
-		public:
-		const char* what() const throw();
-	};
-	class NamingSocketWithBindException : public std::exception
-	{
-		public:
-		const char* what() const throw();
-	};
-	class AcceptingClientsException : public std::exception
-	{
-		public:
-		const char* what() const throw();
-	};
-	class MarkingFdAsListenException : public std::exception
-	{
-		public:
-		const char* what() const throw();
-	};
+	virtual const char* what() const throw();
+};
+
+class ServerSideReadException : public WebExceptions
+{
+public:
+	const char* what() const throw();
+};
+
+class ServerSideErrorCGI : public WebExceptions
+{
+public:
+	const char* what() const throw();
+};
+
+class ForkCGIException : public WebExceptions
+{
+public:
+	const char* what() const throw();
+};
+
+class AllowSocketAddReuseException : public WebExceptions
+{
+public:
+	const char* what() const throw();
+};
+
+class CreatingServerSocketException : public WebExceptions
+{
+public:
+	const char* what() const throw();
+};
+
+class NamingSocketWithBindException : public WebExceptions
+{
+public:
+	const char* what() const throw();
+};
+
+class AcceptingClientsException : public WebExceptions
+{
+public:
+	const char* what() const throw();
+};
+
+class MarkingFdAsListenException : public WebExceptions
+{
+public:
+	const char* what() const throw();
 };
 
 #endif

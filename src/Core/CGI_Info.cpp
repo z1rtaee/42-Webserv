@@ -1,5 +1,4 @@
 #include "Webserv.hpp"
-#include "Core/LocalCore.hpp"
 #include <sys/wait.h>
 #include <sstream>
 #include <algorithm>
@@ -53,16 +52,16 @@ void	CGI_Info::getCGI_env()
 	env.push_back("REQUEST_METHOD=" + to_str("GET")); // this is dynamic
 	env.push_back("SCRIPT_NAME=" + Config.root + file);
 	env.push_back("SCRIPT_FILENAME=" + Config.ABSroot + Config.root + file);
-	// env.push_back("PATH_INFO=" + ); // this is dynamic path that comer after script name
-	// env.push_back("QUERY_STRING=" + ); // this is dynamic everything that comes after the query, as is
-	// env.push_back("REQUEST_URI=" + ); // this is dynamic, its the exact uri the client searched for
-	// env.push_back("CONTENT_LENGTH=" + to_str(lengh)); // this is dynamic
+	// env.push_back("PATH_INFO=" + ); //!! this is dynamic path that comer after script name
+	// env.push_back("QUERY_STRING=" + ); //!! this is dynamic everything that comes after the query, as is
+	// env.push_back("REQUEST_URI=" + ); //!! this is dynamic, its the exact uri the client searched for
+	// env.push_back("CONTENT_LENGTH=" + to_str(lengh)); //!! this is dynamic
 
-	// if (find("x-forwarded-for") != end()) // idk if this is needed actually
-	// 	env.push_back("REMOTE_ADDR=" + ); //find the argument for "x-forwarded-for" its the client IP address
-	// if (find("content-type") != end()) // idk if this is needed actually
-	// 	env.push_back("CONTENT_TYPE=" + );  //find the argument for "content-type" its the MIME type of the request body, in the exact form the client sent it (including parameters)
-	// for (HEADER::const_iterator it = HEADER::begin(); it != HEADER::end(); it++)
+	// if (find("x-forwarded-for") != end()) //!! idk if this is needed actually
+	// 	env.push_back("REMOTE_ADDR=" + ); // !!find the argument for "x-forwarded-for" its the client IP address
+	// if (find("content-type") != end()) //!! idk if this is needed actually
+	// 	env.push_back("CONTENT_TYPE=" + );  //!!find the argument for "content-type" its the MIME type of the request body, in the exact form the client sent it (including parameters)
+	// for (HEADER::const_iterator it = HEADER::begin(); it != HEADER::end(); it++) //!!
 	// {
 	// 	// MAGNIFICENTLY stolen from raquel 
 	// 	// -- add "HTTP_" before all keys, the "-" become "_" and all uppercase
@@ -77,7 +76,7 @@ void CGI_Info::execCGI()
 {
 	pid = fork();
 	if (pid == -1)
-		throw WebExceptions::AcceptingClientsException(); // !! wrong exception
+		throw ForkCGIException();
 	if (pid == 0) // child
 	{
 		dup2(pfd[1], 1);
@@ -97,7 +96,7 @@ void CGI_Info::execCGI()
 			exec_env.push_back(const_cast<char *>(env[i].c_str()));
 		exec_env.push_back(NULL);
 		execve(args[0], &args[0], &exec_env[0]);
-		// !! bastard linux this still can fail
+		throw ServerSideErrorCGI();
 	}
 	close (pfd[1]);
 	state = waitpid(pid, NULL, WNOHANG);
