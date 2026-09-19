@@ -4,6 +4,7 @@
 # include <string>
 # include <map>
 # include <iostream>
+# include <algorithm>
 
 # define CRLF "\r\n"
 
@@ -47,10 +48,16 @@ class Request {
         RequestState _state;
 
         //void        parseHeaders();
-        void        parseKeyValues(std::string *line, std::string sep, std::string::size_type delim);
+        void        parseKeyValues(std::string *line, std::string sep, headers_map &out);
         static bool splitRequestLine(const std::string &line, std::string &method, std::string &target, std::string &version);
         static bool isValidMethod(const std::string &method);
         static bool isValidVersion(const std::string &version);
+
+        static bool isTokenChar(char c);
+        static bool isValidToken(const std::string &s);
+        static bool isFieldVChar(unsigned char c);
+        static std::string trimOWS(const std::string &s);
+        static bool isValidFieldValue(const std::string &s);
 };
 
 #endif

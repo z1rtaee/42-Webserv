@@ -1,28 +1,32 @@
-/*
-#include "../inc/HTTP/Request.hpp"
+#include "../../inc/HTTP/Request.hpp"
 
-MAIN FOR HEADERS
 int main(void) {
     Request request;
 
     std::cout << "----- Should Not Return 2 CRLF -----" << std::endl;
     request.setBuffer("\r\n\r\n");
     request.parseHeaders();
+    std::cout << "Parse Ended at State of : " << request.getParseStatus() << "\n\n";
 
     std::cout << "----- Should Not Return 2 CRLF -----" << std::endl;
-    request.setBuffer("Key: Value\r\n\r\n");
+    request.setBuffer("Name : Value\r\n\r\n");
     request.parseHeaders();
-
+    std::cout << "Parse Ended at State of : " << request.getParseStatus() << "\n\n";
+    
     std::cout << std::endl << "----- Should Return Only 1 CRLF -----" << std::endl;
     request.setBuffer("\r\n");
     request.parseHeaders();
-
+    std::cout << "Parse Ended at State of : " << request.getParseStatus() << "\n\n";
+    
     std::cout << std::endl << "----- Should Return No CRLF -----" << std::endl;
-    request.setBuffer("Oi");
+    request.setBuffer("Oi: value\r\n\r\n");
     request.parseHeaders();
+    /*
+    */
 }
 
 
+/*
 MAIN FOR REQUEST LINE
 int main(void) {
     Request request;
