@@ -28,7 +28,7 @@ CONFIG_SRCS		=
 CONFIG			= $(addprefix $(CONFIG_PATH), $(CONFIG_SRCS))
 
 HTTP_PATH		= src/HTTP/
-HTTP_SRCS		= clean.cpp HTTP.cpp
+HTTP_SRCS		= Request.cpp HTTP.cpp
 HTTP			= $(addprefix $(HTTP_PATH), $(HTTP_SRCS))
 
 CORE_PATH		= src/Core/
