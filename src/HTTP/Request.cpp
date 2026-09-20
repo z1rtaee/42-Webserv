@@ -1,5 +1,9 @@
 #include "HTTP/Request.hpp"
 
+Request::Request() : HttpMessage(), _state(BEGIN) {}
+
+Request::~Request() {}
+
 bool Request::splitRequestLine(const std::string &line, std::string &method, std::string &target, std::string &version) {
     const std::string::size_type first_space = line.find(' ');
     const std::string::size_type second_space = line.find(' ', first_space + 1);
@@ -22,12 +26,6 @@ bool Request::splitRequestLine(const std::string &line, std::string &method, std
         return false;
     }
     return true;
-}
-
-Request::Request() : HttpMessage(), _state(BEGIN) {
-}
-
-Request::~Request() {
 }
 
 const RequestState  &Request::getState() const {
@@ -126,7 +124,7 @@ void Request::parseRequestLine() {
 ParseStatus Request::parseRequest(const std::string request) {
     _buffer += request;
 
-    while (!_buffer.empty()) {
+    while (true) {
         switch (getState()) {
             case BEGIN:
                 setState(START_LINE);

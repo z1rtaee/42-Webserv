@@ -60,7 +60,7 @@ $(HTTP_OBJS_PATH):
 $(NAME): 		$(LIB_WEBSERV)
 				@echo "$(WHITE)Bringing $(PINK)$(NAME)$(WHITE) to life!$(DEFAULT)"
 				@echo "$(WHITE)Creating $(PINK)$(NAME)'s$(WHITE) executable...$(DEFAULT)"
-				$(CXX) $(CXXFLAGS)  src/HTTP/main.cpp $(LIB_WEBSERV) -o $@
+				$(CXX) $(CXXFLAGS)  src/HTTP/parserequestdebug.cpp $(LIB_WEBSERV) -o $@
 				@echo "$(PINK)$(NAME) was born!$(DEFAULT)"
 
 echo:

@@ -2,9 +2,17 @@
 # define RESPONSE_HPP
 
 # include "HTTP.hpp"
+# include "Status.hpp"
 
 class Response : public HttpMessage {
-    // adds: _statusCode, _reasonPhrase, buildStatusLine()
+    public:
+        Response();
+        ~Response();
+    private:
+        //buildStatusLine();
+        ResponseStatus _statusCode;
+        std::string    _reasonPhrase;
+
 };
 
 #endif

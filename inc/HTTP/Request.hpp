@@ -18,9 +18,9 @@ class Request : public HttpMessage {
         void                setState(const RequestState new_state);
 
         void                setBuffer(const std::string new_buffer);
-        void                parseRequestLine();
-        void                parseHeaders();
-        ParseStatus parseRequest(const std::string line);
+        void                parseRequestLine(); /*private*/
+        void                parseHeaders();/*private*/
+        ParseStatus         parseRequest(const std::string line); /*private*/
 
     private:
         std::string _buffer;
