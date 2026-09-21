@@ -23,8 +23,7 @@ SRC_PATH		= src/
 SRCS	 		= $(CONFIG_SRCS) $(HTTP_SRCS) $(CORE_SRCS)
 
 CONFIG_PATH 	= src/config/
-CONFIG_SRCS		= 
-#???????????
+CONFIG_SRCS		= Configuration.cpp ConfigParser.cpp LocationConfig.cpp ServerConfig.cpp Lexer.cpp
 CONFIG			= $(addprefix $(CONFIG_PATH), $(CONFIG_SRCS))
 
 HTTP_PATH		= src/HTTP/
