@@ -1,7 +1,7 @@
 #ifndef STATUS_HPP
 #define STATUS_HPP
 
-enum t_status {
+enum ResponseStatus {
     /*1XX: INFORMATIONAL REPONSES*/
     INV = -1,
     CONTINUE,
@@ -29,7 +29,7 @@ enum t_status {
     TEMPORARY_REDIRECT,
     PERMANENT_REDIRECT,
     /*4XX: CLIENT ERROR CODES*/
-    BAD_REQUEST,
+    BAD_REQUEST = 400,
     UNAUTHORIZED,
     PAYMENT_REQUIRED,
     FORBIDDEN,

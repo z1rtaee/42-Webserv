@@ -1,84 +1,13 @@
 #include "HTTP/Request.hpp"
-#include <cctype>
 
-const std::map<std::string, std::string> &Request::getHeaders() const {
-    return _headers;
-}
+Request::Request() : HttpMessage(), _state(BEGIN) {}
 
-bool Request::hasWhitespace(const std::string &value) {
-    for (std::string::size_type index = 0; index < value.size(); ++index) {
-        const char c = value[index];
-        if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f') {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool Request::isTokenChar(char c) {
-    if (std::isalnum(static_cast<unsigned char>(c))) {
-        return true;
-    }
-    switch (c) {
-        case '!':
-        case '#':
-        case '$':
-        case '%':
-        case '&':
-        case 39:
-        case '*':
-        case '+':
-        case '-':
-        case '.':
-        case '^':
-        case '_':
-        case '`':
-        case '|':
-        case '~':
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool Request::isValidHeaderName(const std::string &name) {
-    if (name.empty()) {
-        return false;
-    }
-    for (std::string::size_type index = 0; index < name.size(); ++index) {
-        if (!isTokenChar(name[index])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-std::string Request::trim(const std::string &value) {
-    std::string::size_type begin = 0;
-    std::string::size_type end = value.size();
-
-    while (begin < end && (value[begin] == ' ' || value[begin] == '\t')) {
-        ++begin;
-    }
-    while (end > begin && (value[end - 1] == ' ' || value[end - 1] == '\t')) {
-        --end;
-    }
-    return value.substr(begin, end - begin);
-}
-
-std::string Request::toLower(const std::string &value) {
-    std::string result = value;
-
-    for (std::string::size_type index = 0; index < result.size(); ++index) {
-        result[index] = static_cast<char>(std::tolower(static_cast<unsigned char>(result[index])));
-    }
-    return result;
-}
+Request::~Request() {}
 
 bool Request::splitRequestLine(const std::string &line, std::string &method, std::string &target, std::string &version) {
     const std::string::size_type first_space = line.find(' ');
     const std::string::size_type second_space = line.find(' ', first_space + 1);
-
+    
     if (first_space == std::string::npos || second_space == std::string::npos) {
         return false;
     }
@@ -88,28 +17,27 @@ bool Request::splitRequestLine(const std::string &line, std::string &method, std
     if (line.find(' ', second_space + 1) != std::string::npos) {
         return false;
     }
-
+    
     method = line.substr(0, first_space);
     target = line.substr(first_space + 1, second_space - first_space - 1);
     version = line.substr(second_space + 1);
-
+    
     if (method.empty() || target.empty() || version.empty()) {
         return false;
     }
     return true;
 }
 
-bool Request::splitHeaderLine(const std::string &line, std::string &name, std::string &value) {
-    const std::string::size_type colon = line.find(':');
-    
-    if (colon == std::string::npos) {
-        return false;
-    }
+const RequestState  &Request::getState() const {
+    return _state;
+}
 
-    name = line.substr(0, colon);
-    value = trim(line.substr(colon + 1));
+void    Request::setBuffer(const std::string new_buffer) {
+    _buffer = new_buffer;
+}
 
-    return isValidHeaderName(name);
+void    Request::setState(const RequestState new_state) {
+    _state = new_state;
 }
 
 bool Request::isValidMethod(const std::string &method) {
@@ -117,47 +45,56 @@ bool Request::isValidMethod(const std::string &method) {
 }
 
 bool Request::isValidVersion(const std::string &version) {
-    std::cout << version << "\n";
+    //std::cout << version << "\n";
     return version == "HTTP/1.1";
 }
 
-Request::Request() : _parseStatus(INCOMPLETE), _state(BEGIN) {
+void Request::parseHeaders() {
+    const std::string::size_type d_crlf = _buffer.find(CRLF CRLF);
+
+    std::cout << "DOUBLE CRLF INDEX: " << d_crlf << std::endl;
+    if (_buffer.compare(0, 2, CRLF) == 0) {
+        _buffer.erase(0, 2);
+        setParseStatus(ERROR);
+        return;
+    }
+    if (d_crlf == std::string::npos) {
+        std::cout << "Returned" << std::endl;
+        setParseStatus(INCOMPLETE);
+        return ;
+    }
+    std::cout << "Did Not Return" << std::endl;
+    std::string header_line = _buffer.substr(0, d_crlf);
+    std::cout << header_line << "\n";
+    /*clean all header and crl crlf (4 bytes) will be ready for next move*/
+    _buffer.erase(0, d_crlf + 4); 
+    parseKeyValues(&header_line, ":", _headers);
+    if (getParseStatus() == ERROR)
+        return;
+    headers_map::iterator hostIt = _headers.find("host");
+    if (hostIt == _headers.end()) {
+        setParseStatus(ERROR); // 400 - Host required in HTTP/1.1
+        return;
+    }
+    setState(BODY);
 }
 
-Request::~Request() {
-}
-
-const RequestState  &Request::getState() const {
-    return _state;
-}
-
-const ParseStatus   &Request::getParseStatus() const {
-    return _parseStatus;
-}
-
-void    Request::setState(const RequestState new_state) {
-    _state = new_state;
-}
-
-void    Request::setParseStatus(const ParseStatus new_parseStatus) {
-    _parseStatus = new_parseStatus;
-}
 
 /*
 parses the start line of the HTTP request message
 METHOD SP TARGET SP HTTP/version CRLF
 */
-void Request::parseRequestLine(const std::string &line) {
+void Request::parseRequestLine() {
     std::string method;
     std::string target;
     std::string version;
-    const std::string::size_type crlf = line.find(CRLF);
+    const std::string::size_type crlf = _buffer.find(CRLF);
 
     if (crlf == std::string::npos) {
         setParseStatus(INCOMPLETE);
         return;
     }
-    if (!splitRequestLine(line.substr(0, crlf), method, target, version)) {
+    if (!splitRequestLine(_buffer.substr(0, crlf), method, target, version)) {
         std::cout << "Splitting Failed" << std::endl;
         setParseStatus(ERROR);
         return;
@@ -184,64 +121,25 @@ void Request::parseRequestLine(const std::string &line) {
     std::cout << "Successful" << std::endl;
 }
 
-void Request::parseHeaders() {
-    while (true) {
-        const std::string::size_type crlf = _buffer.find(CRLF);
-
-        if (crlf == std::string::npos) {
-            setParseStatus(INCOMPLETE);
-            return;
-        }
-
-        /*twin tf did i do here*/
-        if (crlf == 0) {
-            _buffer.erase(0, 2);
-            if (_headers.find("host") == _headers.end()) {
-                setParseStatus(ERROR);
-                return;
-            }
-            setState(EMPRY_LINE);
-            return;
-        }
-
-        const std::string line = _buffer.substr(0, crlf);
-        std::string name;
-        std::string value;
-
-        if (!splitHeaderLine(line, name, value)) {
-            setParseStatus(ERROR);
-            return;
-        }
-
-        _headers[toLower(name)] = value;
-        _buffer.erase(0, crlf + 2);
-    }
-}
-
-
-/*Se erro parsing no pedido entao envio para souza a marcar como completo, COMPLETE, para ele parar de ler
-*/
-ParseStatus Request::parseRequest(const std::string &request) {
+ParseStatus Request::parseRequest(const std::string request) {
     _buffer += request;
 
-    while (!_buffer.empty()) {
+    while (true) {
         switch (getState()) {
             case BEGIN:
                 setState(START_LINE);
                 continue ;
             case START_LINE:
-                parseRequestLine(_buffer);
-                if (getParseStatus() != COMPLETE || getState() != HEADER) 
+                parseRequestLine();
+                if (getState() != HEADER) 
                     return getParseStatus();
                 break ;
             case HEADER:
                 parseHeaders();
-                if (getParseStatus() != COMPLETE || getState() != EMPRY_LINE)
+                if (getState() != BODY)
                     return getParseStatus();
                 break ;
-            case EMPRY_LINE:
-                setState(BODY);
-                continue ;
+            
             case BODY:
                 setParseStatus(COMPLETE);
                 return getParseStatus();

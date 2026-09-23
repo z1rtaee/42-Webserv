@@ -20,14 +20,14 @@ LIB_WEBSERV		= WebServ.a
 
 ### Webserv SRCS ###
 SRC_PATH		= src/
-SRCS	 		= $(CONFIG_SRCS) $(HTTP_SRCS) $(CORE_SRCS)
+SRCS	 		= $(CONFIG_SRCS) $(HTTP_SRCS) 
 
 CONFIG_PATH 	= src/config/
 CONFIG_SRCS		= Configuration.cpp ConfigParser.cpp LocationConfig.cpp ServerConfig.cpp Lexer.cpp
 CONFIG			= $(addprefix $(CONFIG_PATH), $(CONFIG_SRCS))
 
 HTTP_PATH		= src/HTTP/
-HTTP_SRCS		= clean.cpp
+HTTP_SRCS		= Request.cpp HTTP.cpp
 HTTP			= $(addprefix $(HTTP_PATH), $(HTTP_SRCS))
 
 CORE_PATH		= src/Core/
@@ -59,7 +59,7 @@ $(HTTP_OBJS_PATH):
 $(NAME): 		$(LIB_WEBSERV) main.cpp
 				@echo "$(WHITE)Bringing $(PINK)$(NAME)$(WHITE) to life!$(DEFAULT)"
 				@echo "$(WHITE)Creating $(PINK)$(NAME)'s$(WHITE) executable...$(DEFAULT)"
-				$(CXX) $(CXXFLAGS) main.cpp $(LIB_WEBSERV) -o $@
+				$(CXX) $(CXXFLAGS)  src/HTTP/parserequestdebug.cpp $(LIB_WEBSERV) -o $@
 				@echo "$(PINK)$(NAME) was born!$(DEFAULT)"
 
 echo:
