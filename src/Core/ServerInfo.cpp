@@ -1,5 +1,10 @@
 #include "Webserv.hpp"
-#include "Core/LocalCore.hpp"
+
+void	jj_memset(char *str, int size)
+{
+	for (int ind = 0; ind < size; ind++)
+		str[ind] = 0;
+}
 
 int ServerInfo::func()
 {
@@ -20,11 +25,6 @@ Config(ref)
 ServerInfo::ServerInfo(void) :
 Info(SERVER)
 {
-}
-
-ServerInfo &ServerInfo::operator=(ServerInfo &ref)
-{
-	return (*this);
 }
 
 ServerInfo::~ServerInfo()

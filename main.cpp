@@ -1,7 +1,7 @@
 # include "Webserv.hpp"
 # include <signal.h>
 
-void TestingEnvironment(void);
+void FunctionalEnv(void);
 
 void mota_function(void)
 {
@@ -12,7 +12,9 @@ void mota_function(void)
 	info.port = PORT;
 	info.protocol = PROTOCOL; // provavelmente n vais mexer nisto
 	info.queue = QUEUE;
-	info.root = "./";
+	info.root = "/";
+	info.ABSroot = "/home/jlima-so/42/ms5/42-Webserv"; // como mudar isto de computador pra computador?
+	info.name = "www.webserving.com";
 	info.type = TYPE; // provavelmente n vais mexer nisto
 	info.events = POLLIN; // provavelmente n vais mexer nisto
 	Sockets::addServer(info);
@@ -20,15 +22,19 @@ void mota_function(void)
 
 int	main(/*int argc, char ** argv*/)
 {
-	// TestingEnvironment();
+	FunctionalEnv();
 	try
 	{
 		mota_function(); // mota automatiza isto!!
 		Sockets::mainLoop();
 	}
-	catch(...)
+	catch(WebExceptions &e)
 	{
-		perror("Error");
+		std::cout << e.what() << std::endl;
+	}
+	catch(std::exception &e)
+	{
+		std::cout << e.what() << std::endl;
 	}
 	std::cout << "closing everything beautifully" << std::endl;
 	Sockets::delEverything();

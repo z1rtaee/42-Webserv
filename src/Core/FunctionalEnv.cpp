@@ -1,7 +1,7 @@
 # include "Webserv.hpp"
 # include <signal.h>
 
-void TestingEnvironment(void);
+void FunctionalEnv(void);
 
 int	G_STOP_VAR = 1;
 
@@ -11,7 +11,7 @@ void modify (int var)
 	G_STOP_VAR = var;
 }
 
-void TestingEnvironment(void)
+void FunctionalEnv(void)
 {
 	signal(SIGINT, modify);
 }

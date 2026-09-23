@@ -8,6 +8,7 @@
 # include <vector>
 # include <map>
 # include <string>
+# include <algorithm>
 
 # include <unistd.h>
 # include <stdio.h>
@@ -28,6 +29,7 @@
 # include "Sockets.hpp"
 # include "ServerInfo.hpp"
 # include "ClientInfo.hpp"
+# include "CGI_Info.hpp"
 # include "Excpetions.hpp"
 
 #endif

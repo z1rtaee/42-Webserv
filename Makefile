@@ -32,7 +32,7 @@ HTTP_SRCS		= Request.cpp HTTP.cpp
 HTTP			= $(addprefix $(HTTP_PATH), $(HTTP_SRCS))
 
 CORE_PATH		= src/Core/
-CORE_SRCS		= ClientInfo.cpp Excpetions.cpp Info.cpp ServerInfo.cpp Sockets.cpp aux.cpp TestingEnvironment.cpp
+CORE_SRCS		= CGI_Info.cpp ClientInfo.cpp Exceptions.cpp Info.cpp ServerInfo.cpp Sockets.cpp FunctionalEnv.cpp aux.cpp
 CORE			= $(addprefix $(CORE_PATH), $(CORE_SRCS))
 
 TOTAL_SRCS		= $(words $(SRCS))
@@ -57,7 +57,7 @@ $(HTTP_OBJS_PATH)%.o: %.cpp | $(HTTP_OBJS_PATH)
 $(HTTP_OBJS_PATH):
 				@mkdir -p $@
 
-$(NAME): 		$(LIB_WEBSERV)
+$(NAME): 		$(LIB_WEBSERV) main.cpp
 				@echo "$(WHITE)Bringing $(PINK)$(NAME)$(WHITE) to life!$(DEFAULT)"
 				@echo "$(WHITE)Creating $(PINK)$(NAME)'s$(WHITE) executable...$(DEFAULT)"
 				$(CXX) $(CXXFLAGS)  src/HTTP/parserequestdebug.cpp $(LIB_WEBSERV) -o $@
