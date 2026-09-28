@@ -4,6 +4,16 @@ Request::Request() : HttpMessage(), _state(BEGIN) {}
 
 Request::~Request() {}
 
+void Request::reset() {
+    resetMessage();
+    _method.clear();
+    _target.clear();
+    _version.clear();
+    _state = BEGIN;
+    // _buffer is  left untouched - it may already contain
+    // the start of the next pipelined request
+}
+
 bool Request::splitRequestLine(const std::string &line, std::string &method, std::string &target, std::string &version) {
     const std::string::size_type first_space = line.find(' ');
     const std::string::size_type second_space = line.find(' ', first_space + 1);
@@ -28,7 +38,7 @@ bool Request::splitRequestLine(const std::string &line, std::string &method, std
     return true;
 }
 
-const RequestState  &Request::getState() const {
+const MessageState  &Request::getState() const {
     return _state;
 }
 
@@ -36,7 +46,7 @@ void    Request::setBuffer(const std::string new_buffer) {
     _buffer = new_buffer;
 }
 
-void    Request::setState(const RequestState new_state) {
+void    Request::setState(const MessageState new_state) {
     _state = new_state;
 }
 
@@ -71,7 +81,7 @@ void Request::parseHeaders() {
     parseKeyValues(&header_line, ":", _headers);
     if (getParseStatus() == ERROR)
         return;
-    headers_map::iterator hostIt = _headers.find("host");
+    string_map::iterator hostIt = _headers.find("host");
     if (hostIt == _headers.end()) {
         setParseStatus(ERROR); // 400 - Host required in HTTP/1.1
         return;
@@ -121,6 +131,55 @@ void Request::parseRequestLine() {
     std::cout << "Successful" << std::endl;
 }
 
+void Request::parseBody() {
+    string_map::iterator te = _headers.find("transfer-encoding");
+    string_map::iterator cl = _headers.find("content-length");
+
+    if (te != _headers.end() && cl != _headers.end()) {
+        setParseStatus(ERROR); // 9112/7230:3.3.3: both present -> reject //check if it is like this or add with virgula
+        return;
+    }
+    if (te != _headers.end()) {
+        /*only chunked no gzip*/
+        std::string normalized = te->second;
+        std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::tolower);
+        if (normalized != "chunked") {
+            setParseStatus(ERROR); //no gzip/deflate/compress
+            return;
+        }
+        /*only chunk if support gzip take this out and check if ends with chunked func above*/
+        parseChunkedBody();
+        return;
+    }
+    if (cl == _headers.end()) {
+        setParseStatus(COMPLETE); // no framing header -> no body loool
+        return;
+    }
+    if (cl->second.empty() || cl->second.size() > 19) {
+        setParseStatus(ERROR);
+        return;
+    }
+    for (std::string::size_type i = 0; i < cl->second.size(); ++i) {
+        if (!std::isdigit(static_cast<unsigned char>(cl->second[i]))) {
+            setParseStatus(ERROR);
+            return;
+        }
+    }
+    errno = 0;
+    std::size_t len = std::strtoul(cl->second.c_str(), NULL, 10);
+    if (errno == ERANGE) {
+        setParseStatus(ERROR);
+        return;
+    }
+    if (_buffer.size() < len) {
+        setParseStatus(INCOMPLETE);
+        return;
+    }
+    _body = _buffer.substr(0, len);
+    _buffer.erase(0, len);
+    setParseStatus(COMPLETE);
+}
+
 ParseStatus Request::parseRequest(const std::string request) {
     _buffer += request;
 
@@ -141,7 +200,7 @@ ParseStatus Request::parseRequest(const std::string request) {
                 break ;
             
             case BODY:
-                setParseStatus(COMPLETE);
+                parseBody();
                 return getParseStatus();
         }
     }
