@@ -155,6 +155,7 @@ void Request::parseBody() {
         setParseStatus(COMPLETE); // no framing header -> no body loool
         return;
     }
+    /*fui burra muda #codigodasduasdamanhã*/
     if (cl->second.empty() || cl->second.size() > 19) {
         setParseStatus(ERROR);
         return;

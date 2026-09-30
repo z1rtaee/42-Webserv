@@ -9,7 +9,7 @@ class Response : public HttpMessage {
     public:
         Response();
         ~Response();
-        void                    setStatusCode(const ResponseStatus &new_status);
+        void                    setStatusCode(const ResponseStatus &new_status); 
         const ResponseStatus    &getStatusCode() const;
         const std::string       &getReasonPhrase() const;
         void                    setRequestMethod(const std::string &method); // needed for the HEAD body rule

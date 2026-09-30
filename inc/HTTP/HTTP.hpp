@@ -6,6 +6,7 @@
 # include <iostream>
 # include <algorithm>
 # include <cctype>
+# include <cerrno>
 
 # define CRLF "\r\n"
 

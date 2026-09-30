@@ -109,3 +109,90 @@ std::string Response::buildStatusLine() const {
     oss << "HTTP/1.1" << " " << code << " " << reason << CRLF;
     return oss.str();
 }
+
+bool Response::bodyAllowed() const {
+    /*§3.3.3 point 1: responses to HEAD, and any 1xx/204/304, are
+    always terminated by the header section's blank line regardless
+    of what headers say - they can never carry a body.*/
+    
+    /*if (_requestMethod == "HEAD") {
+        return false;
+    } if head implemented add lol*/
+    int code;
+    std::string reason;
+    statusInfo(_statusCode, code, reason);
+    if ((code >= 100 && code < 200) || code == 204 || code == 304) {
+        return false;
+    }
+    return true;
+
+}
+
+std::string Response::buildHeaderBlock() const {
+    std::ostringstream oss;
+
+    for (string_map::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
+        oss << capitalizeHeaderName(it->first) << ": " << it->second << CRLF;
+    }
+    return oss.str();
+}
+
+std::string Response::capitalizeHeaderName(const std::string &lowerName) const {
+    // Field names are case-insensitive on the wire (§3.2.6), so this
+    // step has no effect on correctness - it exists purely so a human
+    // or a picky client logging raw traffic sees "Content-Type" rather
+    // than "content-type" lol. Capitalize the first letter and any letter
+    // immediately after a '-'.
+    std::string result = lowerName;
+    bool capitalizeNext = true;
+    for (std::string::size_type i = 0; i < result.size(); ++i) {
+        if (capitalizeNext) {
+            result[i] = std::toupper(static_cast<unsigned char>(result[i]));
+        }
+        capitalizeNext = (result[i] == '-');
+    }
+    return result;
+}
+
+void    Response::setRequestMethod(const std::string &method){
+
+} /* needed for the HEAD body rule*/
+
+bool Response::setHeader(const std::string &name, const std::string &value) {
+    if (!isValidToken(name)) {
+        return false;
+    }
+    if (!isValidFieldValue(value)) {
+        return false;
+    }
+
+    std::string key = name;
+    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+    _headers[key] = value;
+    return true;
+}
+
+//only working for  content-lenght no transfer-enconding
+void Response::setBody(const std::string &body) {
+    _body = body;
+
+    std::ostringstream oss;
+    oss << _body.size();
+    setHeader("Content-Length", oss.str());
+}
+
+std::string Response::build() const {
+    std::string message = buildStatusLine() + buildHeaderBlock() + CRLF;
+    /*HTTP-message = start-line *( header-field CRLF ) CRLF [ message-body ]
+    The blank CRLF above is the mandatory empty line marking
+    the end of the header section, present whether or not a body
+    follows.
+    
+    Look at HTTPMessageExample.png inside this directory if u need 
+    to visualize it. Later will be on readme
+    */
+    if (bodyAllowed()) {
+        message += _body;
+    }
+    return message;
+}
