@@ -17,6 +17,7 @@ class Request : public HttpMessage {
         ParseStatus         parseRequest(const std::string line); /*private*/
         
         void                reset();
+        bool                keepAlive() const;
 
     private:
         std::string _method;

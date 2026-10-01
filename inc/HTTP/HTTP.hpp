@@ -7,6 +7,7 @@
 # include <algorithm>
 # include <cctype>
 # include <cerrno>
+# include "Status.hpp"
 
 # define CRLF "\r\n"
 
@@ -39,12 +40,15 @@ class HttpMessage {
         std::string _buffer;
         std::string _body;
         ParseStatus _parseStatus;
+        ResponseStatus _errorStatus;
 
         ChunkState    _chunkState;
         std::size_t   _chunkRemaining;
 
         static const std::size_t MAX_CHUNK_SIZE = 8388608;   // 8 MiB per chunk
         static const std::size_t MAX_BODY_SIZE  = 10485760;  // 10 MiB total body
+        static const std::size_t MAX_HEADER_SIZE = 16384;     // 16 KiB header section
+
 
         void parseKeyValues(std::string *line, std::string sep, string_map &out); // shared
         void parseChunkedBody();                              // shared
@@ -58,11 +62,13 @@ class HttpMessage {
         static std::string trimOWS(const std::string &s);       // shared
         void resetMessage();
 
+        void setError(ResponseStatus status); // sets _parseStatus = ERROR AND records which code
     public:
         HttpMessage();
         virtual ~HttpMessage();
         const string_map &getHeaders() const;
         const ParseStatus &getParseStatus() const;
+        const ResponseStatus &getErrorStatus() const;
         void setParseStatus(const ParseStatus new_parseStatus);
 };
 

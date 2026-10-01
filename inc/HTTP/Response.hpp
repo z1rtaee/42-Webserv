@@ -2,7 +2,6 @@
 # define RESPONSE_HPP
 
 # include "HTTP.hpp"
-# include "Status.hpp"
 # include <sstream>
 
 class Response : public HttpMessage {

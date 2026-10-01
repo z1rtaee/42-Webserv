@@ -1,9 +1,18 @@
 # include "HTTP/HTTP.hpp"
 
-HttpMessage::HttpMessage() : _parseStatus(INCOMPLETE), _chunkState(CHUNK_SIZE_LINE), _chunkRemaining(0) {
-}
+HttpMessage::HttpMessage() : _parseStatus(INCOMPLETE), _errorStatus(INV), 
+                             _chunkState(CHUNK_SIZE_LINE), _chunkRemaining(0) {}
 
 HttpMessage::~HttpMessage() {
+}
+
+void HttpMessage::setError(ResponseStatus status) {
+    _parseStatus = ERROR;
+    _errorStatus = status;
+}
+
+const ResponseStatus &HttpMessage::getErrorStatus() const {
+    return _errorStatus;
 }
 
 void HttpMessage::resetChunkState() {
@@ -15,6 +24,7 @@ void HttpMessage::resetMessage() {
     _headers.clear();
     _body.clear();
     _parseStatus = INCOMPLETE;
+    _errorStatus = INV;
     resetChunkState();
 }
 
@@ -237,24 +247,24 @@ void HttpMessage::parseKeyValues(std::string *line, std::string sep, string_map 
 	size_t crlf;
 
 	if ((*line).empty()){
-		setParseStatus(ERROR);
+		setError(BAD_REQUEST);
 		return ;
 	}
 	while (!(*line).empty()) {
 		colon = line->find(sep);
 		if (colon == std::string::npos || colon == 0) {
-			setParseStatus(ERROR);
+			setError(BAD_REQUEST);
 			break ;
 		}
 		if ((*line)[0] == ' ' || (*line)[0] == '\t') {
 			std::cout << "\n" << "Rejected obs-fold / leading whitespace\n";
-			setParseStatus(ERROR);
+			setError(BAD_REQUEST);
 			break;
 		}
 		name = line->substr(0, colon);
 		if (!isValidToken(name)) {
 			std::cout << "\n" << "Name Failed Parsing : " << name << "\n";
-			setParseStatus(ERROR);
+			setError(BAD_REQUEST);
 			break;
 		}
 		crlf = line->find(CRLF, colon + sep.length());
@@ -265,7 +275,7 @@ void HttpMessage::parseKeyValues(std::string *line, std::string sep, string_map 
 		value = trimOWS(value);
 		if (!isValidFieldValue(value)) {
 			std::cout << "\n" << "Value Failed Parsing : " << value << "\n";
-			setParseStatus(ERROR);
+			setError(BAD_REQUEST);
 			break;
 		}
 		std::transform(name.begin(), name.end(), name.begin(), tolower);
