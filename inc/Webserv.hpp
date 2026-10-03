@@ -3,5 +3,6 @@
 
 # include "HTTP/Request.hpp"
 # include "Core/GlobalCore.hpp"
+# include "config/Configuration.hpp"
 
 #endif

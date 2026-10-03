@@ -1,7 +1,7 @@
 # include "Webserv.hpp"
 # include <signal.h>
 
-void FunctionalEnv(void);
+/*void FunctionalEnv(void);
 
 void mota_function(void)
 {
@@ -20,7 +20,7 @@ void mota_function(void)
 	Sockets::addServer(info);
 }
 
-int	main(/*int argc, char ** argv*/)
+int	main(int argc, char ** argv)
 {
 	FunctionalEnv();
 	try
@@ -38,4 +38,36 @@ int	main(/*int argc, char ** argv*/)
 	}
 	std::cout << "closing everything beautifully" << std::endl;
 	Sockets::delEverything();
+}*/
+
+int main(int argc, char** argv)
+{
+	if (argc != 2)
+	{
+		std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+		return 1;
+	}
+
+	try
+	{
+		Configuration config(argv[1]);
+		const std::vector<ServerConfig>& servers = config.getServers();
+
+		for (std::vector<ServerConfig>::const_iterator it = servers.begin(); it != servers.end(); ++it)
+		{
+			std::cout << *it << std::endl;
+
+			for (std::vector<LocationConfig>::const_iterator loc_it = it->getLocations().begin(); loc_it != it->getLocations().end(); ++loc_it)
+			{
+				std::cout << *loc_it << std::endl;
+			}
+		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+		return 1;
+	}
+
+	return 0;
 }
