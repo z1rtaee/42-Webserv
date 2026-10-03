@@ -265,9 +265,9 @@ void	Sockets::addClient(int ind)
 	AllSockets.push_back(New_pollfd);
 }
 
-void	Sockets::addServer(t_info &Config)
+void	Sockets::addServer(t_info Config)
 {
-	int	fd = socket(Config.domain, Config.type, Config.protocol);
+	int	fd = socket(DOMAIN, TYPE, PROTOCOL);
 
 	if (fd == -1)
 		throw CreatingServerSocketException();
@@ -293,7 +293,7 @@ void	Sockets::addServer(t_info &Config)
 		throw NamingSocketWithBindException();
 	}
 
-	if (listen(fd, Config.queue) == -1)
+	if (listen(fd, QUEUE) == -1)
 	{
 		close (fd);
 		delete (Server);
@@ -302,7 +302,7 @@ void	Sockets::addServer(t_info &Config)
 	
 	struct pollfd New_pollfd;
 
-	New_pollfd.events = Config.events;
+	New_pollfd.events = POLLIN;
 	New_pollfd.fd = fd;
 	New_pollfd.revents = 0;
 

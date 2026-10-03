@@ -28,7 +28,7 @@
 
 // what port are we listening from, standard is 8080
 # ifndef QUEUE
-#  define QUEUE 10
+#  define QUEUE SOMAXCONN
 # endif
 
 // max size for HTTP requests, standard is 10000

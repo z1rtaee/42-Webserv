@@ -5,7 +5,7 @@
 
 class ClientInfo;
 
-static int screaming_snake_case(int i)
+static int SCREAMING_SNAKE_CASE(int i)
 {
 	if (i == '-' || i == ' ')
 		return '_';
@@ -47,7 +47,7 @@ void	CGI_Info::getCGI_env()
 	env.push_back("SERVER_SOFTWARE=" + to_str("server/1.0.0")); // what value goes here
 	env.push_back("SERVER_NAME=" + Config.name);
 	env.push_back("SERVER_PROTOCOL=" + to_str("HTTP/1.1")); // this is dynamic
-	env.push_back("SERVER_PORT=" + to_str(Config.port));
+	env.push_back("SERVER_PORT=" + to_str(Config.endpoint.port));
 	env.push_back("GATEWAY_INTERFACE=" + to_str("CGI/1.1"));
 	env.push_back("REQUEST_METHOD=" + to_str("GET")); // this is dynamic
 	env.push_back("SCRIPT_NAME=" + Config.root + file);
@@ -66,11 +66,10 @@ void	CGI_Info::getCGI_env()
 	// 	// MAGNIFICENTLY stolen from raquel 
 	// 	// -- add "HTTP_" before all keys, the "-" become "_" and all uppercase
 	// 	std::string key (*it).first;
-	// 	std::transform(key.begin(), key.end(), key.begin(), screaming_snake_case);
+	// 	std::transform(key.begin(), key.end(), key.begin(), SCREAMING_SNAKE_CASE);
 	// 	env.push_back("HTTP_" + key + "=" + (*it).second);
 	// }
 }
-
 
 void CGI_Info::execCGI()
 {

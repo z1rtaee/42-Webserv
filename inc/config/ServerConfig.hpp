@@ -43,11 +43,11 @@ class ServerConfig
         ServerConfig();
         ~ServerConfig();
 
-        const std::vector<t_endpoint>& getListen() const;
+        const std::vector<t_endpoint>& getListen() const; // ports
         const std::string& getRoot() const;
         size_t getClientMaxBodySize() const;
-        const std::vector<t_error_page>& getErrorPages() const;
-        const std::vector<LocationConfig>& getLocations() const;
+        const std::vector<t_error_page>& getErrorPages() const; 
+        const std::vector<LocationConfig>& getLocations() const; 
         
         bool has_listen_set() const;
         bool has_root_set() const;
