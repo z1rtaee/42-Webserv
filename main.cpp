@@ -15,11 +15,6 @@ t_info	build_t_info(ServerConfig ref)
 	return (ret);
 }
 
-int	start_web_server()
-{
-
-}
-
 int main(int argc, char** argv)
 {
 	if (argc != 2)
@@ -43,11 +38,6 @@ int main(int argc, char** argv)
 			}
 		}
 		Sockets::mainLoop();
-	}
-	catch (const std::exception& e)
-	{
-		std::cerr << "Error: " << e.what() << std::endl;
-		return 1;
 	}
 	catch(WebExceptions &e)
 	{
