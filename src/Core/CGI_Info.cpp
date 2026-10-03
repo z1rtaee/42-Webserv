@@ -50,8 +50,8 @@ void	CGI_Info::getCGI_env()
 	env.push_back("SERVER_PORT=" + to_str(Config.endpoint.port));
 	env.push_back("GATEWAY_INTERFACE=" + to_str("CGI/1.1"));
 	env.push_back("REQUEST_METHOD=" + to_str("GET")); // this is dynamic
-	env.push_back("SCRIPT_NAME=" + Config.root + file);
-	env.push_back("SCRIPT_FILENAME=" + Config.ABSroot + Config.root + file);
+	// env.push_back("SCRIPT_NAME=" + Config.root + file); //!! URL
+	// env.push_back("SCRIPT_FILENAME=" + Config.root + file); //!! URI
 	// env.push_back("PATH_INFO=" + ); //!! this is dynamic path that comer after script name
 	// env.push_back("QUERY_STRING=" + ); //!! this is dynamic everything that comes after the query, as is
 	// env.push_back("REQUEST_URI=" + ); //!! this is dynamic, its the exact uri the client searched for
