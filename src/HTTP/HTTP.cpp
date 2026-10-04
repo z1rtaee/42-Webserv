@@ -50,7 +50,7 @@ void HttpMessage::parseChunkedBody() {
             std::string::size_type crlf = _buffer.find(CRLF);
             if (crlf == std::string::npos) {
                 if (_buffer.size() > 64) {
-                    setParseStatus(ERROR); // absurdly long chunk-size line (does thi make sense?????????)
+                    setError(BAD_REQUEST); // malformed/never-terminated chunk-size line -> 400
                     return;
                 }
                 setParseStatus(INCOMPLETE);
@@ -58,9 +58,6 @@ void HttpMessage::parseChunkedBody() {
             }
 
             std::string sizeLine = _buffer.substr(0, crlf);
-
-            // strip chunk-ext: chunk-size [ ";" chunk-ext ] - we don't
-            // need extensions, just discard anything from ';' onward.
             std::string::size_type semi = sizeLine.find(';');
             std::string hexPart = (semi == std::string::npos)
                 ? sizeLine
@@ -68,35 +65,34 @@ void HttpMessage::parseChunkedBody() {
             hexPart = trimOWS(hexPart);
 
             if (hexPart.empty()) {
-                setParseStatus(ERROR);
+                setError(BAD_REQUEST); // §4.1: chunk-size = 1*HEXDIG, can't be empty -> 400
                 return;
             }
             for (std::string::size_type i = 0; i < hexPart.size(); ++i) {
                 if (!std::isxdigit(static_cast<unsigned char>(hexPart[i]))) {
-                    setParseStatus(ERROR);
+                    setError(BAD_REQUEST); // non-hex byte in chunk-size -> 400
                     return;
                 }
             }
-            if (hexPart.size() > 8) { // more than 8 hex digits -> way past MAX_CHUNK_SIZE
-                setParseStatus(ERROR);
+            if (hexPart.size() > 8) {
+                setError(BAD_REQUEST); // absurd chunk-size length -> 400
                 return;
             }
 
             errno = 0;
             unsigned long size = std::strtoul(hexPart.c_str(), NULL, 16);
             if (errno == ERANGE || size > MAX_CHUNK_SIZE) {
-                setParseStatus(ERROR);
+                setError(CONTENT_TOO_LARGE); // chunk exceeds our configured cap -> 413
                 return;
             }
             if (_body.size() + size > MAX_BODY_SIZE) {
-                setParseStatus(ERROR);
+                setError(CONTENT_TOO_LARGE); // running total exceeds our cap -> 413
                 return;
             }
 
-            _buffer.erase(0, crlf + 2); // consume size-line + its CRLF
-
+            _buffer.erase(0, crlf + 2);
             if (size == 0) {
-                _chunkState = CHUNK_TRAILERS; // last-chunk reached
+                _chunkState = CHUNK_TRAILERS;
             } else {
                 _chunkRemaining = size;
                 _chunkState = CHUNK_DATA;
@@ -106,7 +102,7 @@ void HttpMessage::parseChunkedBody() {
 
         case CHUNK_DATA: {
             if (_buffer.size() < _chunkRemaining) {
-                setParseStatus(INCOMPLETE); // wait for the rest of this chunk
+                setParseStatus(INCOMPLETE);
                 return;
             }
             _body.append(_buffer, 0, _chunkRemaining);
@@ -122,7 +118,7 @@ void HttpMessage::parseChunkedBody() {
                 return;
             }
             if (_buffer.compare(0, 2, CRLF) != 0) {
-                setParseStatus(ERROR);
+                setError(BAD_REQUEST); // §4.1: missing CRLF after chunk-data -> 400
                 return;
             }
             _buffer.erase(0, 2);
@@ -148,17 +144,12 @@ void HttpMessage::parseChunkedBody() {
             string_map trailers;
             parseKeyValues(&trailerBlock, ":", trailers);
             if (getParseStatus() == ERROR) {
-                return; // malformed trailer header
+                return; // parseKeyValues already called setError(BAD_REQUEST)
             }
 
-            // 7230:4.1.2: a recipient MUST ignore fields in trailers that would
-            // affect message framing/routing if honored here (they were
-            // already fixed by the header block) - never let a trailer
-            // silently override these.
             trailers.erase("content-length");
             trailers.erase("transfer-encoding");
             trailers.erase("host");
-
             for (string_map::iterator it = trailers.begin(); it != trailers.end(); ++it) {
                 _headers[it->first] = it->second;
             }
