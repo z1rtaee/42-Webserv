@@ -1,12 +1,173 @@
 # include "HTTP/HTTP.hpp"
 
-HttpMessage::HttpMessage() : _parseStatus(INCOMPLETE) {
-}
+HttpMessage::HttpMessage() : _parseStatus(INCOMPLETE), _errorStatus(INV), 
+                             _chunkState(CHUNK_SIZE_LINE), _chunkRemaining(0) {}
 
 HttpMessage::~HttpMessage() {
 }
 
-const headers_map &HttpMessage::getHeaders() const {
+void HttpMessage::setError(ResponseStatus status) {
+    _parseStatus = ERROR;
+    _errorStatus = status;
+}
+
+const ResponseStatus &HttpMessage::getErrorStatus() const {
+    return _errorStatus;
+}
+
+void HttpMessage::resetChunkState() {
+    _chunkState = CHUNK_SIZE_LINE;
+    _chunkRemaining = 0;
+}
+
+void HttpMessage::resetMessage() {
+    _headers.clear();
+    _body.clear();
+    _parseStatus = INCOMPLETE;
+    _errorStatus = INV;
+    resetChunkState();
+}
+
+/*gzip func*/
+bool HttpMessage::endsWithChunked(const std::string &teValue) {
+    std::string::size_type lastComma = teValue.find_last_of(',');
+    std::string lastCoding = (lastComma == std::string::npos)
+        ? teValue
+        : teValue.substr(lastComma + 1);
+
+    lastCoding = trimOWS(lastCoding);
+
+    std::string lower = lastCoding;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    return lower == "chunked";
+}
+
+void HttpMessage::parseChunkedBody() {
+    while (true) {
+        switch (_chunkState) {
+
+        case CHUNK_SIZE_LINE: {
+            std::string::size_type crlf = _buffer.find(CRLF);
+            if (crlf == std::string::npos) {
+                if (_buffer.size() > 64) {
+                    setError(BAD_REQUEST); // malformed/never-terminated chunk-size line -> 400
+                    return;
+                }
+                setParseStatus(INCOMPLETE);
+                return;
+            }
+
+            std::string sizeLine = _buffer.substr(0, crlf);
+            std::string::size_type semi = sizeLine.find(';');
+            std::string hexPart = (semi == std::string::npos)
+                ? sizeLine
+                : sizeLine.substr(0, semi);
+            hexPart = trimOWS(hexPart);
+
+            if (hexPart.empty()) {
+                setError(BAD_REQUEST); // §4.1: chunk-size = 1*HEXDIG, can't be empty -> 400
+                return;
+            }
+            for (std::string::size_type i = 0; i < hexPart.size(); ++i) {
+                if (!std::isxdigit(static_cast<unsigned char>(hexPart[i]))) {
+                    setError(BAD_REQUEST); // non-hex byte in chunk-size -> 400
+                    return;
+                }
+            }
+            if (hexPart.size() > 8) {
+                setError(BAD_REQUEST); // absurd chunk-size length -> 400
+                return;
+            }
+
+            errno = 0;
+            unsigned long size = std::strtoul(hexPart.c_str(), NULL, 16);
+            if (errno == ERANGE || size > MAX_CHUNK_SIZE) {
+                setError(CONTENT_TOO_LARGE); // chunk exceeds our configured cap -> 413
+                return;
+            }
+            if (_body.size() + size > MAX_BODY_SIZE) {
+                setError(CONTENT_TOO_LARGE); // running total exceeds our cap -> 413
+                return;
+            }
+
+            _buffer.erase(0, crlf + 2);
+            if (size == 0) {
+                _chunkState = CHUNK_TRAILERS;
+            } else {
+                _chunkRemaining = size;
+                _chunkState = CHUNK_DATA;
+            }
+            break;
+        }
+
+        case CHUNK_DATA: {
+            if (_buffer.size() < _chunkRemaining) {
+                setParseStatus(INCOMPLETE);
+                return;
+            }
+            _body.append(_buffer, 0, _chunkRemaining);
+            _buffer.erase(0, _chunkRemaining);
+            _chunkRemaining = 0;
+            _chunkState = CHUNK_DATA_CRLF;
+            break;
+        }
+
+        case CHUNK_DATA_CRLF: {
+            if (_buffer.size() < 2) {
+                setParseStatus(INCOMPLETE);
+                return;
+            }
+            if (_buffer.compare(0, 2, CRLF) != 0) {
+                setError(BAD_REQUEST); // §4.1: missing CRLF after chunk-data -> 400
+                return;
+            }
+            _buffer.erase(0, 2);
+            _chunkState = CHUNK_SIZE_LINE;
+            break;
+        }
+
+        case CHUNK_TRAILERS: {
+            if (_buffer.compare(0, 2, CRLF) == 0) {
+                _buffer.erase(0, 2);
+                _chunkState = CHUNK_DONE;
+                setParseStatus(COMPLETE);
+                return;
+            }
+
+            std::string::size_type d_crlf = _buffer.find(CRLF CRLF);
+            if (d_crlf == std::string::npos) {
+                setParseStatus(INCOMPLETE);
+                return;
+            }
+
+            std::string trailerBlock = _buffer.substr(0, d_crlf);
+            string_map trailers;
+            parseKeyValues(&trailerBlock, ":", trailers);
+            if (getParseStatus() == ERROR) {
+                return; // parseKeyValues already called setError(BAD_REQUEST)
+            }
+
+            trailers.erase("content-length");
+            trailers.erase("transfer-encoding");
+            trailers.erase("host");
+            for (string_map::iterator it = trailers.begin(); it != trailers.end(); ++it) {
+                _headers[it->first] = it->second;
+            }
+
+            _buffer.erase(0, d_crlf + 4);
+            _chunkState = CHUNK_DONE;
+            setParseStatus(COMPLETE);
+            return;
+        }
+
+        case CHUNK_DONE:
+            setParseStatus(COMPLETE);
+            return;
+        }
+    }
+}
+
+const string_map &HttpMessage::getHeaders() const {
 	return _headers;
 }
 
@@ -70,31 +231,31 @@ bool HttpMessage::isValidFieldValue(const std::string &s) {
 	return true;
 }
 
-void HttpMessage::parseKeyValues(std::string *line, std::string sep, headers_map &out) {
+void HttpMessage::parseKeyValues(std::string *line, std::string sep, string_map &out) {
 	std::string name;
 	std::string value;
 	size_t colon;
 	size_t crlf;
 
 	if ((*line).empty()){
-		setParseStatus(ERROR);
+		setError(BAD_REQUEST);
 		return ;
 	}
 	while (!(*line).empty()) {
 		colon = line->find(sep);
 		if (colon == std::string::npos || colon == 0) {
-			setParseStatus(ERROR);
+			setError(BAD_REQUEST);
 			break ;
 		}
 		if ((*line)[0] == ' ' || (*line)[0] == '\t') {
 			std::cout << "\n" << "Rejected obs-fold / leading whitespace\n";
-			setParseStatus(ERROR);
+			setError(BAD_REQUEST);
 			break;
 		}
 		name = line->substr(0, colon);
 		if (!isValidToken(name)) {
 			std::cout << "\n" << "Name Failed Parsing : " << name << "\n";
-			setParseStatus(ERROR);
+			setError(BAD_REQUEST);
 			break;
 		}
 		crlf = line->find(CRLF, colon + sep.length());
@@ -105,11 +266,11 @@ void HttpMessage::parseKeyValues(std::string *line, std::string sep, headers_map
 		value = trimOWS(value);
 		if (!isValidFieldValue(value)) {
 			std::cout << "\n" << "Value Failed Parsing : " << value << "\n";
-			setParseStatus(ERROR);
+			setError(BAD_REQUEST);
 			break;
 		}
 		std::transform(name.begin(), name.end(), name.begin(), tolower);
-		headers_map::iterator it = out.find(name);
+		string_map::iterator it = out.find(name);
 		if (it != out.end())
 			it->second += ", " + value;
 		else
