@@ -9,7 +9,7 @@ ClientInfo::ClientInfo(ServerInfo *ServerRef):
 Info(CLIENT),
 ServerRef(ServerRef),
 CGIref(NULL),
-request(),
+request(ServerRef->Config),
 requestStatus(INCOMPLETE),
 response(),
 responseStatus(INCOMPLETE)
