@@ -14,51 +14,63 @@ void Request::reset() {
     // the start of the next pipelined request
 }
 
-bool    Request::keepAlive() const {
+bool Request::keepAlive() const
+{
     string_map::const_iterator it = _headers.find("connection");
-
     if (it == _headers.end())
-        return true;
-    std::string value = it->second;
-    std::transform(value.begin(), value.end(), value.begin(), tolower);/*verify*/
-    return (value.find("close") == std::string::npos);
-}
+        return true; /* HTTP/1.1 persistence is the default. */
 
-bool Request::splitRequestLine(const std::string &line, std::string &method, std::string &target, std::string &version) {
-    const std::string::size_type first_space = line.find(' ');
-    const std::string::size_type second_space = line.find(' ', first_space + 1);
-    
-    if (first_space == std::string::npos || second_space == std::string::npos) {
-        return false;
-    }
-    if (first_space == 0 || second_space == first_space + 1 || second_space == line.size() - 1) {
-        return false;
-    }
-    if (line.find(' ', second_space + 1) != std::string::npos) {
-        return false;
-    }
-    
-    method = line.substr(0, first_space);
-    target = line.substr(first_space + 1, second_space - first_space - 1);
-    version = line.substr(second_space + 1);
-    
-    if (method.empty() || target.empty() || version.empty()) {
-        return false;
+    const std::string &value = it->second;
+    std::string::size_type start = 0;
+
+    while (start <= value.size()) {
+        std::string::size_type comma = value.find(',', start);
+        std::string token = trimOWS(value.substr(
+            start, comma == std::string::npos
+                ? std::string::npos : comma - start));
+
+        /* Empty/invalid list members fail closed. */
+        if (token.empty())
+            return false;
+        if (toLower(token) == "close")
+            return false;
+        if (comma == std::string::npos)
+            break;
+        start = comma + 1;
     }
     return true;
 }
 
-const MessageState  &Request::getState() const {
-    return _state;
+const std::string &Request::getMethod() const { return _method; }
+const std::string &Request::getTarget() const { return _target; }
+const std::string &Request::getVersion() const { return _version; }
+const std::string &Request::getBody() const { return _body; }
+
+
+bool Request::splitRequestLine(const std::string &line, std::string &method, std::string &target, std::string &version)
+{
+    const std::string::size_type first_space = line.find(' ');
+    if (first_space == std::string::npos)
+        return false;
+    const std::string::size_type second_space = line.find(' ', first_space + 1);
+    if (second_space == std::string::npos)
+        return false;
+    if (first_space == 0 || second_space == first_space + 1
+        || second_space == line.size() - 1)
+        return false;
+    if (line.find(' ', second_space + 1) != std::string::npos)
+        return false;
+
+    method = line.substr(0, first_space);
+    target = line.substr(first_space + 1, second_space - first_space - 1);
+    version = line.substr(second_space + 1);
+    return !method.empty() && !target.empty() && !version.empty();
 }
 
-void    Request::setBuffer(const std::string new_buffer) {
-    _buffer = new_buffer;
-}
+const MessageState &Request::getState() const { return _state; }
+void Request::setBuffer(const std::string new_buffer) { _buffer = new_buffer; }
+void Request::setState(const MessageState new_state) { _state = new_state; }
 
-void    Request::setState(const MessageState new_state) {
-    _state = new_state;
-}
 
 bool Request::isValidMethod(const std::string &method) {
     return method == "GET" || method == "POST" || method == "DELETE";
@@ -69,30 +81,36 @@ bool Request::isValidVersion(const std::string &version) {
     return version == "HTTP/1.1";
 }
 
-void Request::parseHeaders() {
+void Request::parseHeaders()
+{
     if (_buffer.compare(0, 2, CRLF) == 0) {
         _buffer.erase(0, 2);
-        setError(BAD_REQUEST); // no Host, checked below anyway - falls through correctly
+        setError(BAD_REQUEST);
         return;
     }
+
     const std::string::size_type d_crlf = _buffer.find(CRLF CRLF);
     if (d_crlf == std::string::npos) {
         if (_buffer.size() > MAX_HEADER_SIZE) {
-            setError(REQUEST_H_F_TOO_LARGE); // §3.2.5: header section too large -> 431
+            setError(REQUEST_H_F_TOO_LARGE);
             return;
         }
         setParseStatus(INCOMPLETE);
         return;
     }
+    if (d_crlf + 4 > MAX_HEADER_SIZE) {
+        setError(REQUEST_H_F_TOO_LARGE);
+        return;
+    }
+
     std::string header_line = _buffer.substr(0, d_crlf);
     _buffer.erase(0, d_crlf + 4);
     parseKeyValues(&header_line, ":", _headers);
     if (getParseStatus() == ERROR)
         return;
 
-    string_map::iterator hostIt = _headers.find("host");
-    if (hostIt == _headers.end()) {
-        setError(BAD_REQUEST); // §5.4: Host required in HTTP/1.1 -> 400
+    if (_headers.find("host") == _headers.end()) {
+        setError(BAD_REQUEST);
         return;
     }
     setState(BODY);
@@ -135,19 +153,19 @@ void Request::parseRequestLine() {
     setState(HEADER);
 }
 
-void Request::parseBody() {
+
+void Request::parseBody()
+{
     string_map::iterator te = _headers.find("transfer-encoding");
     string_map::iterator cl = _headers.find("content-length");
 
     if (te != _headers.end() && cl != _headers.end()) {
-        setError(BAD_REQUEST); // §3.3.3: both present -> 400
+        setError(BAD_REQUEST);
         return;
     }
     if (te != _headers.end()) {
-        std::string normalized = te->second;
-        std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::tolower);
-        if (normalized != "chunked") {
-            setError(NOT_IMPLEMENTED); // unsupported coding -> 501
+        if (toLower(trimOWS(te->second)) != "chunked") {
+            setError(NOT_IMPLEMENTED);
             return;
         }
         parseChunkedBody();
@@ -158,7 +176,7 @@ void Request::parseBody() {
         return;
     }
     if (cl->second.empty() || cl->second.size() > 19) {
-        setError(BAD_REQUEST); // §3.3.2: invalid Content-Length -> 400
+        setError(BAD_REQUEST);
         return;
     }
     for (std::string::size_type i = 0; i < cl->second.size(); ++i) {
@@ -167,44 +185,48 @@ void Request::parseBody() {
             return;
         }
     }
+
     errno = 0;
-    std::size_t len = std::strtoul(cl->second.c_str(), NULL, 10);
+    unsigned long parsedLength = std::strtoul(cl->second.c_str(), NULL, 10);
     if (errno == ERANGE) {
         setError(BAD_REQUEST);
         return;
     }
-    if (len > MAX_BODY_SIZE) {
-        setError(CONTENT_TOO_LARGE); // practical cap -> 413
+    if (parsedLength > MAX_BODY_SIZE) {
+        setError(CONTENT_TOO_LARGE);
         return;
     }
+
+    std::size_t len = static_cast<std::size_t>(parsedLength);
     if (_buffer.size() < len) {
         setParseStatus(INCOMPLETE);
         return;
     }
+
     _body = _buffer.substr(0, len);
     _buffer.erase(0, len);
     setParseStatus(COMPLETE);
 }
 
-ParseStatus Request::parseRequest(const std::string request) {
+ParseStatus Request::parseRequest(const std::string request)
+{
     _buffer += request;
 
     while (true) {
         switch (getState()) {
             case BEGIN:
                 setState(START_LINE);
-                continue ;
+                continue;
             case START_LINE:
                 parseRequestLine();
-                if (getState() != HEADER) 
+                if (getState() != HEADER)
                     return getParseStatus();
-                break ;
+                break;
             case HEADER:
                 parseHeaders();
                 if (getState() != BODY)
                     return getParseStatus();
-                break ;
-            
+                break;
             case BODY:
                 parseBody();
                 return getParseStatus();

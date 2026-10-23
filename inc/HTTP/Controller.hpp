@@ -44,7 +44,9 @@ class Controller {
         be reused regardless of what Connection header the client
         sent or what keepAlive() would otherwise say.*/
         Response buildErrorResponse(const Request &request) const;
-
+        std::string buildCGIErrorResponse(ResponseStatus status,
+                    const std::string &requestMethod) const;
+        
         /*Produces the body for a given status: the registered custom
         page if one exists, otherwise a minimal default page built
         from the status's own reason phrase.*/

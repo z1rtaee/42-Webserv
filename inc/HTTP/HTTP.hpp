@@ -2,10 +2,12 @@
 # define HTTP_HPP
 
 # include <string>
+# include <cstddef>
 # include <map>
 # include <iostream>
 # include <algorithm>
 # include <cctype>
+# include <cstdlib>
 # include <cerrno>
 # include "Status.hpp"
 
@@ -27,10 +29,10 @@ enum ParseStatus {
 };
 
 enum ChunkState {
-    CHUNK_SIZE_LINE,   // expecting "hex-size[;ext]\r\n"
-    CHUNK_DATA,        // expecting chunk-size octets
-    CHUNK_DATA_CRLF,   // expecting the CRLF that follows chunk-data
-    CHUNK_TRAILERS,    // expecting trailer-part + final CRLF
+    CHUNK_SIZE_LINE,
+    CHUNK_DATA,
+    CHUNK_DATA_CRLF,
+    CHUNK_TRAILERS,
     CHUNK_DONE
 };
 
@@ -42,34 +44,38 @@ class HttpMessage {
         ParseStatus _parseStatus;
         ResponseStatus _errorStatus;
 
-        ChunkState    _chunkState;
-        std::size_t   _chunkRemaining;
+        ChunkState  _chunkState;
+        std::size_t _chunkRemaining;
 
-        static const std::size_t MAX_CHUNK_SIZE = 8388608;   // 8 MiB per chunk
-        static const std::size_t MAX_BODY_SIZE  = 10485760;  // 10 MiB total body
-        static const std::size_t MAX_HEADER_SIZE = 16384;     // 16 KiB header section
+        static const std::size_t MAX_CHUNK_SIZE = 8388608;
+        static const std::size_t MAX_BODY_SIZE = 10485760;
+        static const std::size_t MAX_HEADER_SIZE = 16384;
 
+        void parseKeyValues(std::string *line, std::string sep, string_map &out);
+        void parseChunkedBody();
+        void resetChunkState();
+        static bool endsWithChunked(const std::string &teValue);
 
-        void parseKeyValues(std::string *line, std::string sep, string_map &out); // shared
-        void parseChunkedBody();                              // shared
-        void resetChunkState();                                // for keep-alive reuse
-        static bool endsWithChunked(const std::string &teValue); // shared
-
-        static bool isTokenChar(char c);                    // shared
-        static bool isValidToken(const std::string &s);        // shared
-        static bool isFieldVChar(unsigned char c);           // shared
-        static bool isValidFieldValue(const std::string &s);   // shared
-        static std::string trimOWS(const std::string &s);       // shared
+        static bool isTokenChar(char c);
+        static bool isValidToken(const std::string &s);
+        static bool isFieldVChar(unsigned char c);
+        static bool isValidFieldValue(const std::string &s);
         void resetMessage();
 
-        void setError(ResponseStatus status); // sets _parseStatus = ERROR AND records which code
+        void setError(ResponseStatus status);
+
     public:
         HttpMessage();
         virtual ~HttpMessage();
+
         const string_map &getHeaders() const;
         const ParseStatus &getParseStatus() const;
         const ResponseStatus &getErrorStatus() const;
         void setParseStatus(const ParseStatus new_parseStatus);
+
+        /* Shared lightweight utilities used by Request, Response and Controller. */
+        static std::string trimOWS(const std::string &s);
+        static std::string toLower(const std::string &s);
 };
 
 #endif
