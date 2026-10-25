@@ -1,20 +1,20 @@
 #ifndef JJ_STRUCTS_HPP
 # define JJ_STRUCTS_HPP
 
+#include "config/ServerConfig.hpp"
 #include <string>
 
 typedef struct s_server_info 
 {
-	std::string	root;
-	std::string	ABSroot;
-	std::string	name;
-	int			domain;
-	int			type;
-	int			protocol;
-	int			interface;
-	int			port;
-	int			queue;
-	int			events;
+	t_endpoint					endpoint; // ip / ports
+
+	size_t						MaxBodySize;//bea needs this
+	std::string					Extention;	//bea needs this
+	std::string					root;		//bea needs this
+	std::vector<t_error_page>	ErrorPages; //bea needs this
+	std::vector<LocationConfig>	Locations;	//bea needs this
+
+	std::string					name; // stays the same
 } t_info;
 
 typedef enum _type

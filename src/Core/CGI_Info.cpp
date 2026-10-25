@@ -5,7 +5,7 @@
 
 class ClientInfo;
 
-static int screaming_snake_case(int i)
+static int SCREAMING_SNAKE_CASE(int i)
 {
 	if (i == '-' || i == ' ')
 		return '_';
@@ -46,31 +46,30 @@ void	CGI_Info::getCGI_env()
 
 	env.push_back("SERVER_SOFTWARE=" + to_str("server/1.0.0")); // what value goes here
 	env.push_back("SERVER_NAME=" + Config.name);
-	env.push_back("SERVER_PROTOCOL=" + to_str("HTTP/1.1")); // this is dynamic
-	env.push_back("SERVER_PORT=" + to_str(Config.port));
+	env.push_back("SERVER_PROTOCOL=" + to_str("HTTP/1.1")); //!!bea this is dynamic version
+	env.push_back("SERVER_PORT=" + to_str(Config.endpoint.port));
 	env.push_back("GATEWAY_INTERFACE=" + to_str("CGI/1.1"));
-	env.push_back("REQUEST_METHOD=" + to_str("GET")); // this is dynamic
-	env.push_back("SCRIPT_NAME=" + Config.root + file);
-	env.push_back("SCRIPT_FILENAME=" + Config.ABSroot + Config.root + file);
-	// env.push_back("PATH_INFO=" + ); //!! this is dynamic path that comer after script name
-	// env.push_back("QUERY_STRING=" + ); //!! this is dynamic everything that comes after the query, as is
-	// env.push_back("REQUEST_URI=" + ); //!! this is dynamic, its the exact uri the client searched for
-	// env.push_back("CONTENT_LENGTH=" + to_str(lengh)); //!! this is dynamic
+	env.push_back("REQUEST_METHOD=" + to_str("GET")); //!!bea this is dynamic method
+	// env.push_back("SCRIPT_NAME=" + Config.root + file); //!!bea URL
+	// env.push_back("SCRIPT_FILENAME=" + Config.root + file); //!!bea URI target
+	// env.push_back("PATH_INFO=" + ); //!!bea this is dynamic path that comer after script name
+	// env.push_back("QUERY_STRING=" + ); //!!bea this is dynamic everything that comes after the query, as is
+	// env.push_back("REQUEST_URI=" + ); //!!bea this is dynamic, its the exact uri the client searched for
+	// env.push_back("CONTENT_LENGTH=" + to_str(lengh)); //!!bea this is dynamic
 
-	// if (find("x-forwarded-for") != end()) //!! idk if this is needed actually
-	// 	env.push_back("REMOTE_ADDR=" + ); // !!find the argument for "x-forwarded-for" its the client IP address
-	// if (find("content-type") != end()) //!! idk if this is needed actually
-	// 	env.push_back("CONTENT_TYPE=" + );  //!!find the argument for "content-type" its the MIME type of the request body, in the exact form the client sent it (including parameters)
-	// for (HEADER::const_iterator it = HEADER::begin(); it != HEADER::end(); it++) //!!
+	// if (find("x-forwarded-for") != end()) //!!bea idk if this is needed actually
+	// 	env.push_back("REMOTE_ADDR=" + ); //!!bea find the argument for "x-forwarded-for" its the client IP address
+	// if (find("content-type") != end()) //!!bea idk if this is needed actually
+	// 	env.push_back("CONTENT_TYPE=" + );  //!!bea find the argument for "content-type" its the MIME type of the request body, in the exact form the client sent it (including parameters)
+	// for (HEADER::const_iterator it = HEADER::begin(); it != HEADER::end(); it++) //!!bea
 	// {
 	// 	// MAGNIFICENTLY stolen from raquel 
 	// 	// -- add "HTTP_" before all keys, the "-" become "_" and all uppercase
 	// 	std::string key (*it).first;
-	// 	std::transform(key.begin(), key.end(), key.begin(), screaming_snake_case);
+	// 	std::transform(key.begin(), key.end(), key.begin(), SCREAMING_SNAKE_CASE);
 	// 	env.push_back("HTTP_" + key + "=" + (*it).second);
 	// }
 }
-
 
 void CGI_Info::execCGI()
 {

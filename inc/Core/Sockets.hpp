@@ -21,7 +21,7 @@ public:
 	~Sockets();
 
 	static void mainLoop(void); // main poll loop function
-	static void	addServer(t_info &Config); // adds the ServerSocketID from the list of ServerSockets, does nothing if it doesnt exist
+	static void	addServer(t_info Config); // adds the ServerSocketID from the list of ServerSockets, does nothing if it doesnt exist
 	static void	delEverything(); // deletes the SocketID from the list of sockets, does nothing if it doesnt exist
 
 private:

@@ -3,29 +3,40 @@
 
 void FunctionalEnv(void);
 
-void mota_function(void)
+t_info	build_t_info(ServerConfig ref)
 {
-	t_info info;
+	t_info	ret;
 
-	info.domain = DOMAIN;
-	info.interface = INTERFACE;
-	info.port = PORT;
-	info.protocol = PROTOCOL; // provavelmente n vais mexer nisto
-	info.queue = QUEUE;
-	info.root = "/";
-	info.ABSroot = "/home/jlima-so/42/ms5/42-Webserv"; // como mudar isto de computador pra computador?
-	info.name = "www.webserving.com";
-	info.type = TYPE; // provavelmente n vais mexer nisto
-	info.events = POLLIN; // provavelmente n vais mexer nisto
-	Sockets::addServer(info);
+	ret.ErrorPages = ref.getErrorPages();
+	ret.Locations = ref.getLocations();
+	ret.MaxBodySize = ref.getClientMaxBodySize();
+	ret.root = ref.getRoot();
+	ret.name = "www.webserving.com";
+	return (ret);
 }
 
-int	main(/*int argc, char ** argv*/)
+int main(int argc, char** argv)
 {
+	if (argc != 2)
+	{
+		std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+		return 1;
+	}
 	FunctionalEnv();
 	try
 	{
-		mota_function(); // mota automatiza isto!!
+		Configuration config(argv[1]);
+		const std::vector<ServerConfig>& servers = config.getServers();
+
+		for (std::vector<ServerConfig>::const_iterator it = servers.begin(); it != servers.end(); ++it)
+		{
+			t_info	SvConfig = build_t_info(*it);
+			for (std::vector<t_endpoint>::const_iterator loc_it = it->getListen().begin(); loc_it != it->getListen().end(); ++loc_it)
+			{
+				SvConfig.endpoint = *loc_it;
+				Sockets::addServer(SvConfig);
+			}
+		}
 		Sockets::mainLoop();
 	}
 	catch(WebExceptions &e)
@@ -38,4 +49,5 @@ int	main(/*int argc, char ** argv*/)
 	}
 	std::cout << "closing everything beautifully" << std::endl;
 	Sockets::delEverything();
+	return 0;
 }
