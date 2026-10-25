@@ -34,8 +34,8 @@ class Controller {
         RFC 3875 §6, separates it from the body, and returns the complete
         ready-to-write HTTP response - same as
         handleRequest.*/
-        std::string handleCGIOutput(const std::string &cgiOutput) const;
-
+        std::string handleCGIOutput(const std::string &cgiOutput,
+                                    const std::string &requestMethod = "") const;
     private:
         /*Builds a response for a request that failed to parse.
         Always sends "Connection: close" per RFC 7230 §3.3.3 - once
